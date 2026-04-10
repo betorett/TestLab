@@ -1,7 +1,7 @@
 # 🧪 TestLab Pro
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Style: Premium](https://img.shields.io/badge/Style-Premium-blueviolet)](https:// Claude.ai)
+[![Style: Premium](https://img.shields.io/badge/Style-Premium-blueviolet)]
 
 **TestLab** es una plataforma minimalista y potente de exámenes interactivos diseñada para optimizar el estudio mediante la automatización por IA. Convierte tus bancos de preguntas CSV en sesiones de estudio dinámicas con corrección inmediata, historial de intentos e integración directa con modelos de lenguaje como Gemini o Claude.
 
@@ -9,7 +9,7 @@
 
 ## ✨ Características Principales
 
-- **🎨 Interfaz Premium**: Diseño refinado estilo Apple/Claude con transiciones suaves y modo oscuro/claro automático.
+- **🎨 Interfaz Premium**: Diseño refinado con transiciones suaves y modo oscuro/claro automático.
 - **📚 Historial de Exámenes**: Memoria persistente en el navegador para repetir exámenes anteriores y seguir tu progreso.
 - **🤖 Integración con IA**: Generación de reportes detallados para Gemini y botones de consulta rápida para resolver dudas conceptuales al instante.
 - **⚡ Carga Flexible**: Sube archivos `.csv` o pega directamente el texto desde el portapapeles.

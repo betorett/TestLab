@@ -102,13 +102,14 @@ body {
 /* ===== SCREENS ===== */
 .screen {
     position: fixed; inset: 0; z-index: 1;
-    display: flex; align-items: flex-start; justify-content: center;
-    padding-top: 8vh; padding-bottom: 8vh; overflow-y: auto;
+    display: flex; align-items: center; justify-content: center;
+    overflow-y: auto;
     opacity: 0; pointer-events: none;
     transform: translateY(10px) scale(0.98);
     transition: opacity 0.4s ease, transform 0.4s ease;
 }
 .screen.active { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+#upload-screen { align-items: flex-start; padding-top: 5vh; padding-bottom: 5vh; }
 
 /* ===== TYPOGRAPHY ===== */
 h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text-primary); }

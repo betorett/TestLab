@@ -1,4 +1,4 @@
-const CACHE_NAME = 'testlab-v2';
+const CACHE_NAME = 'testlab-v3';
 const ASSETS = [
   './',
   './index.html',

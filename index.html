@@ -93,6 +93,59 @@
         </div>
     </main>
 
+    <!-- Modal Settings -->
+    <dialog id="settings-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Ajustes</h2>
+                <button id="close-settings" class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            
+            <div class="settings-group">
+                <label for="penalty-input">Penalización por fallo:</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                    <input type="number" id="penalty-input" min="0" max="1" step="0.01" value="0.33" style="width: 80px; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-element); color: var(--text-primary);">
+                    <span class="meta">Puntos (por defecto 0.33)</span>
+                </div>
+                <p class="meta" style="margin-top: 8px; line-height: 1.4;">Un error restará al total de tu nota sobre 10 este factor del valor de un acierto.</p>
+            </div>
+
+            <div class="settings-group" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+                <label>Generación automática de Test:</label>
+                <p class="meta" style="margin-top: 4px; margin-bottom: 12px; line-height: 1.4;">Copia las reglas para que ChatGPT o Gemini te devuelvan el CSV 100% compatible.</p>
+                <button type="button" id="open-ai-prompt" class="nav-btn" style="width: 100%; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Ver Prompt de IA
+                </button>
+            </div>
+
+            <button id="save-settings-btn" class="nav-btn primary" style="width: 100%; margin-top: 24px;">Guardar Ajustes</button>
+        </div>
+    </dialog>
+
+    <!-- Modal AI Prompt -->
+    <dialog id="ai-prompt-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Prompt para IA</h2>
+                <button id="close-modal" class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <p>Copia este texto y envíaselo a ChatGPT, Claude, Gemini o tu IA favorita para que te genere el archivo exacto que necesitas:</p>
+            <div class="prompt-box">
+                <pre id="prompt-text">Genera un examen tipo test basado en [INSERTA TUS APUNTES / ENLACE / TEMA] y formatéalo como un archivo CSV válido.
+Reglas estrictas para el CSV:
+1. No incluyas cabeceras en el CSV.
+2. Utiliza siempre el punto y coma (;) como separador de columnas para evitar conflictos con las comas del texto, o asegura que el texto con comas esté entre dobles comillas "".
+3. Cada fila representará una pregunta. Puede tener un número infinito de columnas de opciones de este modo:
+[Pregunta] ; [SINGLE o MULTIPLE] ; [Opción A] ; [Opción B] ; [N Opciones extra...] ; [Respuesta]
+4. La segunda posición debe ser el texto SINGLE (si hay 1 solución) o MULTIPLE (si hay varias).
+5. La última posición debe ser la respuesta (o respuestas) correctas. Si es SINGLE usa la letra (ej: A). Si es MULTIPLE, usa letras separadas por pipe (ej: A|C).
+6. Entrégame el resultado directamente en formato CSV crudo dentro de un bloque de código para que yo pueda guardarlo en un archivo .csv fácilmente.</pre>
+                <button id="copy-prompt-btn" class="nav-btn primary">Copiar Prompt</button>
+            </div>
+        </div>
+    </dialog>
+
     <!-- SCREEN: Mode Selection -->
     <main id="mode-screen" class="screen">
         <div class="mode-layout">

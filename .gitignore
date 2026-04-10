@@ -1,0 +1,20 @@
+# System Files
+.DS_Store
+Thumbs.db
+
+# Gemini / Antigravity folders
+.gemini/
+.agent/
+.agents/
+knowledge/
+brain/
+artifacts/
+tmp/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local server
+node_modules/
+package-lock.json

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TestLab — Exámenes Interactivos</title>
+    <meta name="description" content="Sube un CSV y convierte tus preguntas en un examen interactivo con resolución de dudas por IA.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+    <!-- Ambient background -->
+    <div class="ambient-glow"></div>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+        <button id="settings-btn" class="icon-toggle" title="Ajustes">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+
+        <button id="theme-toggle" class="icon-toggle" title="Cambiar tema">
+            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+    </div>
+
+    <!-- SCREEN: Upload -->
+    <main id="upload-screen" class="screen active">
+        <div class="upload-layout">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                        <polyline points="10 2 10 10 13 7 16 10 16 2"/>
+                    </svg>
+                </div>
+                <h1>TestLab</h1>
+                <p class="subtitle">Convierte tus apuntes en exámenes interactivos</p>
+            </div>
+
+            <div id="drop-zone" class="drop-zone">
+                <input type="file" id="file-input" accept=".csv" hidden>
+                <div class="drop-zone-content">
+                    <div class="upload-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <p class="drop-main">Arrastra tu archivo CSV aquí</p>
+                    <p class="drop-sub">o <button type="button" class="link-btn" id="browse-btn">busca en tu equipo</button></p>
+                </div>
+            </div>
+
+            <div class="paste-section">
+                <button type="button" class="nav-btn" id="toggle-paste-btn" style="width: 100%; justify-content: center; background: var(--bg-element);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                    Pegar texto manualmente
+                </button>
+                <div id="paste-collapse" class="hidden" style="margin-top: 16px;">
+                    <div class="textarea-wrapper">
+                        <textarea id="paste-input" placeholder="[Pregunta] ; [SINGLE] ; [Opcion A] ; [Opcion B] ; [Respuesta]..."></textarea>
+                        <button id="load-paste-btn" class="nav-btn primary" disabled>Cargar Examen</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 32px; text-align: center;">
+                <button type="button" id="open-history-btn" class="nav-btn" style="background: transparent; border-color: transparent;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Historial de exámenes
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Settings -->
+    <dialog id="settings-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Ajustes</h2>
+                <button id="close-settings" class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            
+            <div class="settings-group">
+                <label for="penalty-input">Penalización por fallo:</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                    <input type="number" id="penalty-input" min="0" max="1" step="0.01" value="0.33" style="width: 80px; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-element); color: var(--text-primary);">
+                    <span class="meta">Puntos (por defecto 0.33)</span>
+                </div>
+                <p class="meta" style="margin-top: 8px; line-height: 1.4;">Un error restará al total de tu nota sobre 10 este factor del valor de un acierto.</p>
+            </div>
+
+            <div class="settings-group" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+                <label>Generación automática de Test:</label>
+                <p class="meta" style="margin-top: 4px; margin-bottom: 12px; line-height: 1.4;">Copia las reglas para que ChatGPT o Gemini te devuelvan el CSV 100% compatible.</p>
+                <button type="button" id="open-ai-prompt" class="nav-btn" style="width: 100%; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Ver Prompt de IA
+                </button>
+            </div>
+
+            <button id="save-settings-btn" class="nav-btn primary" style="width: 100%; margin-top: 24px;">Guardar Ajustes</button>
+        </div>
+    </dialog>
+
+    <!-- Modal AI Prompt -->
+    <dialog id="ai-prompt-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Prompt para IA</h2>
+                <button id="close-modal" class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <p>Copia este texto y envíaselo a ChatGPT, Claude, Gemini o tu IA favorita para que te genere el archivo exacto que necesitas:</p>
+            <div class="prompt-box">
+                <pre id="prompt-text">Genera un examen tipo test basado en [INSERTA TUS APUNTES / ENLACE / TEMA] y formatéalo como un archivo CSV válido.
+Reglas estrictas para el CSV:
+1. No incluyas cabeceras en el CSV.
+2. Utiliza siempre el punto y coma (;) como separador de columnas para evitar conflictos con las comas del texto, o asegura que el texto con comas esté entre dobles comillas "".
+3. Cada fila representará una pregunta. Puede tener un número infinito de columnas de opciones de este modo:
+[Pregunta] ; [SINGLE o MULTIPLE] ; [Opción A] ; [Opción B] ; [N Opciones extra...] ; [Respuesta]
+4. La segunda posición debe ser el texto SINGLE (si hay 1 solución) o MULTIPLE (si hay varias).
+5. La última posición debe ser la respuesta (o respuestas) correctas. Si es SINGLE usa la letra (ej: A). Si es MULTIPLE, usa letras separadas por pipe (ej: A|C).
+6. Entrégame el resultado directamente en formato CSV crudo dentro de un bloque de código para que yo pueda guardarlo en un archivo .csv fácilmente.</pre>
+                <button id="copy-prompt-btn" class="nav-btn primary">Copiar Prompt</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- SCREEN: Mode Selection -->
+    <main id="mode-screen" class="screen">
+        <div class="mode-layout">
+            <div class="mode-header">
+                <button class="back-btn" id="back-to-upload">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <div>
+                    <h2>¿Cómo quieres estudiar?</h2>
+                    <p class="meta" id="question-count-label">5 preguntas cargadas</p>
+                </div>
+            </div>
+
+            <div class="mode-cards">
+                <button class="mode-card" data-mode="study" id="mode-study">
+                    <div class="mode-icon study-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    </div>
+                    <div class="mode-info">
+                        <h3>Modo Estudio</h3>
+                        <p>Feedback inmediato tras cada respuesta. Ideal para aprender de tus errores con ayuda de la IA.</p>
+                    </div>
+                    <svg class="mode-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+
+                <button class="mode-card" data-mode="exam" id="mode-exam">
+                    <div class="mode-icon exam-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <div class="mode-info">
+                        <h3>Modo Examen</h3>
+                        <p>Responde todo sin interrupciones. Evalúa tus resultados y revisa errores al final.</p>
+                    </div>
+                    <svg class="mode-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- SCREEN: Exam -->
+    <main id="exam-screen" class="screen">
+        <div class="exam-layout">
+            <header class="exam-topbar">
+                <button class="back-btn" id="quit-btn" title="Salir">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <div class="progress-section">
+                    <span id="question-counter" class="counter-text">1 / 10</span>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="question-area" id="question-container">
+                <!-- Injected via JS -->
+            </div>
+
+            <footer class="exam-bottombar">
+                <button id="prev-btn" class="nav-btn hidden">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    Anterior
+                </button>
+                <div class="spacer"></div>
+                
+                <button id="skip-btn" class="nav-btn hidden">
+                    Saltar
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                </button>
+
+                <button id="ai-help-btn" class="nav-btn hidden" style="color: var(--accent); border-color: rgba(99, 102, 241, 0.4); background: var(--accent-subtle);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 11.5 8.5 8 12C11.5 15.5 12 22 12 22C12 22 12.5 15.5 16 12C12.5 8.5 12 2 12 2Z" fill="currentColor"/></svg>
+                    Duda IA
+                </button>
+
+                <button id="check-multiple-btn" class="nav-btn primary hidden">
+                    Comprobar
+                </button>
+
+                <button id="next-btn" class="nav-btn primary hidden">
+                    Siguiente
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <button id="submit-exam-btn" class="nav-btn primary hidden">Finalizar</button>
+            </footer>
+        </div>
+    </main>
+
+    <!-- SCREEN: Loading -->
+    <main id="loading-screen" class="screen">
+        <div class="loading-layout" style="text-align: center;">
+            <div class="spinner"></div>
+            <h2 id="loading-text" style="margin-top: 24px;">Calculando resultados...</h2>
+        </div>
+    </main>
+
+    <!-- SCREEN: Results -->
+    <main id="results-screen" class="screen">
+        <div class="results-layout">
+            <div class="results-score-block">
+                <div class="score-ring">
+                    <svg viewBox="0 0 120 120">
+                        <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                        <circle class="ring-fill" id="score-ring-fill" cx="60" cy="60" r="52"/>
+                    </svg>
+                    <span class="score-value" id="final-score">0%</span>
+                </div>
+                <h2 id="score-message">¡Buen intento!</h2>
+                <p class="score-detail" id="score-detail">0 de 0 con éxito total</p>
+            </div>
+            <div class="results-actions">
+                <button class="nav-btn" id="generate-report-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Descargar Reporte IA
+                </button>
+                <button class="nav-btn" id="review-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Ver detalles
+                </button>
+                <button class="nav-btn primary" id="restart-btn">Salir</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- SCREEN: History -->
+    <main id="history-screen" class="screen">
+        <div class="history-layout mode-layout">
+            <div class="mode-header" style="justify-content: space-between; align-items: center; width: 100%; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 24px;">
+                <button id="back-from-history-btn" class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                <h2 style="margin: 0; font-size: 1.25rem;">Historial de Exámenes</h2>
+                <button id="clear-history-btn" class="back-btn" title="Borrar todo" style="color: var(--incorrect);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </div>
+            
+            <div id="history-list" class="history-list"></div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="toast-text">Copiado al portapapeles</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

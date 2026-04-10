@@ -19,8 +19,7 @@ const screens = {
     mode: $('mode-screen'),
     exam: $('exam-screen'),
     loading: $('loading-screen'),
-    results: $('results-screen'),
-    history: $('history-screen')
+    results: $('results-screen')
 };
 
 const ui = {
@@ -184,8 +183,10 @@ function copyAiPrompt() {
 }
 
 function showScreen(name) {
-    Object.values(screens).forEach(s => s.classList.remove('active'));
-    screens[name].classList.add('active');
+    Object.values(screens).forEach(s => {
+        if (s) s.classList.remove('active');
+    });
+    if (screens[name]) screens[name].classList.add('active');
 }
 
 // ===== FILE PARSING =====

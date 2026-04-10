@@ -31,9 +31,8 @@ const ui = {
     pasteCollapse: $('paste-collapse'),
     pasteInput: $('paste-input'),
     loadPasteBtn: $('load-paste-btn'),
-    openHistoryBtn: $('open-history-btn'),
-    backFromHistoryBtn: $('back-from-history-btn'),
-    clearHistoryBtn: $('clear-history-btn'),
+    selectAllBtn: $('select-all-btn'),
+    deleteSelectedBtn: $('delete-selected-btn'),
     historyList: $('history-list'),
     backToUpload: $('back-to-upload'),
     questionCountLabel: $('question-count-label'),
@@ -110,10 +109,13 @@ function init() {
         }
     });
 
+    renderHistory();
+
+
     // Upload setup
     ui.dropZone.addEventListener('click', () => ui.fileInput.click());
     ui.browseBtn.addEventListener('click', e => { e.stopPropagation(); ui.fileInput.click(); });
-    ui.fileInput.addEventListener('change', e => { if (e.target.files.length) processFile(e.target.files[0]); });
+    ui.fileInput.addEventListener('change', e => { if (e.target.files.length) handleMultipleFiles(e.target.files); });
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev =>
         ui.dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
@@ -122,7 +124,7 @@ function init() {
     ui.dropZone.addEventListener('dragleave', () => ui.dropZone.classList.remove('dragover'));
     ui.dropZone.addEventListener('drop', e => {
         ui.dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files.length) handleMultipleFiles(e.dataTransfer.files);
     });
 
     // Paste toggle
@@ -141,18 +143,9 @@ function init() {
         if (text) processText(text);
     });
 
-    // History Nav
-    ui.openHistoryBtn.addEventListener('click', () => {
-        renderHistory();
-        showScreen('history');
-    });
-    ui.backFromHistoryBtn.addEventListener('click', () => showScreen('upload'));
-    ui.clearHistoryBtn.addEventListener('click', () => {
-        if(confirm('¿Seguro que quieres borrar todos los exámenes guardados?')) {
-            localStorage.removeItem('testlab-history');
-            renderHistory();
-        }
-    });
+    // Repository Nav & Selection
+    ui.selectAllBtn.addEventListener('click', selectAllExams);
+    ui.deleteSelectedBtn.addEventListener('click', deleteSelectedExams);
 
     // Mode selection
     ui.backToUpload.addEventListener('click', () => showScreen('upload'));
@@ -196,37 +189,60 @@ function showScreen(name) {
 }
 
 // ===== FILE PARSING =====
-function processFile(file) {
-    if (!file.name.endsWith('.csv')) {
-        showToast('Por favor, sube un archivo .csv');
-        return;
-    }
+function handleMultipleFiles(files) {
+    let processedCount = 0;
+    const fileArray = Array.from(files);
+    
+    fileArray.forEach(file => {
+        if (!file.name.endsWith('.csv')) {
+            processedCount++;
+            checkIfDone(processedCount, fileArray.length);
+            return;
+        }
 
-    currentExamName = file.name;
-    Papa.parse(file, {
-        header: false,
-        skipEmptyLines: true,
-        delimiter: "",
-        complete: results => parseQuestions(results.data, file.name)
+        Papa.parse(file, {
+            header: false,
+            skipEmptyLines: true,
+            delimiter: "",
+            complete: results => {
+                parseAndSaveToRepo(results.data, file.name);
+                processedCount++;
+                checkIfDone(processedCount, fileArray.length);
+            }
+        });
     });
+}
+
+function checkIfDone(processed, total) {
+    if (processed === total) {
+        ui.fileInput.value = ''; // reset
+        renderHistory();
+        showToast(`${total} archivo(s) añadido(s) al repositorio`);
+    }
 }
 
 function processText(text) {
     const today = new Date();
-    currentExamName = `Examen Pegado (${today.toLocaleDateString()})`;
+    const nameStr = `Examen Pegado (${today.toLocaleDateString()})`;
     Papa.parse(text, {
         header: false,
         skipEmptyLines: true,
         delimiter: "",
-        complete: results => parseQuestions(results.data, currentExamName)
+        complete: results => {
+            parseAndSaveToRepo(results.data, nameStr);
+            ui.pasteInput.value = '';
+            ui.loadPasteBtn.disabled = true;
+            ui.pasteCollapse.classList.add('hidden');
+            renderHistory();
+            showToast('Añadido al repositorio');
+        }
     });
 }
 
-function parseQuestions(data, fileName) {
-    questions = [];
+function parseAndSaveToRepo(data, fileName) {
+    let parsedQuestions = [];
     let startFrom = 0;
 
-    // Detect if first row is header
     if (data[0] && data[0][0] && (
         data[0][0].toLowerCase().includes('pregunta') ||
         data[0][0].toLowerCase().includes('question')
@@ -236,7 +252,6 @@ function parseQuestions(data, fileName) {
 
     for (let i = startFrom; i < data.length; i++) {
         const row = data[i];
-        // Minimum elements: Question, Type, Option A, Option B, CorrectAnswer
         if (row.length < 5) continue;
 
         const qText = row[0].trim();
@@ -244,19 +259,16 @@ function parseQuestions(data, fileName) {
         const qType = typeRaw.includes('MULT') ? 'MULTIPLE' : 'SINGLE';
         const correctRaw = String(row[row.length - 1]).trim().toUpperCase();
         
-        // Allowed letters mapping to indices
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        
         const optionsRaw = row.slice(2, row.length - 1);
         const options = optionsRaw.map((optText, idx) => ({
             id: letters[idx] || '?',
             text: optText.trim()
         }));
 
-        // correctRaw could be "A|C" or "A"
         const correctArray = correctRaw.split('|').map(s => s.trim()).filter(Boolean);
 
-        questions.push({
+        parsedQuestions.push({
             text: qText,
             type: qType,
             options: options,
@@ -264,22 +276,10 @@ function parseQuestions(data, fileName) {
         });
     }
 
-    if (questions.length === 0) {
-        showToast('No se detectaron preguntas con el formato correcto.');
-        return;
+    if (parsedQuestions.length > 0) {
+        let nameToSave = fileName.replace('.csv', '');
+        saveToHistory(nameToSave, parsedQuestions);
     }
-
-    // Save to memory
-    saveToHistory(currentExamName, questions);
-
-    ui.dropZone.classList.add('loaded');
-    ui.dropZone.querySelector('.drop-main').textContent = `${fileName}`;
-    ui.dropZone.querySelector('.drop-sub').textContent = `${questions.length} preguntas detectadas`;
-
-    setTimeout(() => {
-        ui.questionCountLabel.textContent = `${questions.length} preguntas cargadas`;
-        showScreen('mode');
-    }, 600);
 }
 
 // ===== EXAM =====
@@ -710,34 +710,88 @@ function updateHistoryScore(name, score) {
 function renderHistory() {
     const history = getHistory();
     ui.historyList.innerHTML = '';
-
+    
+    // Hide UI elements if history is empty
     if (history.length === 0) {
-        ui.historyList.innerHTML = '<div style="text-align: center; color: var(--text-tertiary); padding: 40px 0;">No hay exámenes guardados.</div>';
+        ui.historyList.innerHTML = '<div style="text-align: center; color: var(--text-tertiary); padding: 40px 0;">Repositorio vacío.</div>';
+        ui.selectAllBtn.classList.add('hidden');
+        ui.deleteSelectedBtn.classList.add('hidden');
         return;
+    }
+    
+    ui.selectAllBtn.classList.remove('hidden');
+    // Keep deleteSelectedBtn hidden until something is selected
+    const selectedCheckboxes = Array.from(document.querySelectorAll('.repo-checkbox:checked'));
+    if (selectedCheckboxes.length > 0) {
+        ui.deleteSelectedBtn.classList.remove('hidden');
+    } else {
+        ui.deleteSelectedBtn.classList.add('hidden');
     }
 
     history.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'history-item';
-        const scoreHtml = item.lastScore !== null ? `<strong style="color:var(--text-primary);">Nota anterior: ${item.lastScore}/10</strong>` : `<em>Sin realizar aún</em>`;
+        div.style.display = 'flex';
+        div.style.gap = '12px';
+        div.style.alignItems = 'flex-start';
+        
+        const scoreHtml = item.lastScore !== null ? `<strong style="color:var(--text-primary);">Nota: ${item.lastScore}/10</strong>` : `<em>Sin realizar</em>`;
         
         div.innerHTML = `
-            <div class="history-title" style="display: flex; align-items: center; justify-content: space-between;">
-                <span>${item.name}</span>
-                <button class="back-btn" style="width: 28px; height: 28px; border: none; background: transparent;" title="Renombrar examen" onclick="renameHistory(${index})">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </button>
+            <div style="padding-top: 4px;">
+                <input type="checkbox" class="repo-checkbox" data-index="${index}" style="width: 18px; height: 18px; cursor: pointer;">
             </div>
-            <div class="history-meta">
-                <span>${item.questions.length} preguntas • ${item.date}</span>
-                <span>${scoreHtml}</span>
-            </div>
-            <div class="history-actions">
-                <button class="nav-btn primary" style="padding: 6px 12px; font-size: 0.8rem; width: 100%; justify-content: center;" onclick="loadFromHistory(${index})">Repetir Examen</button>
+            <div style="flex: 1; width: 100%;">
+                <div class="history-title" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="word-break: break-all;">${item.name}</span>
+                    <button class="back-btn" style="width: 28px; height: 28px; margin-left: 8px; border: none; background: transparent;" title="Renombrar examen" onclick="renameHistory(${index})">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                </div>
+                <div class="history-meta">
+                    <span>${item.questions.length} preguntas • ${item.date}</span>
+                    <span>${scoreHtml}</span>
+                </div>
+                <div class="history-actions" style="margin-top: 12px;">
+                    <button class="nav-btn primary" style="padding: 6px 12px; font-size: 0.8rem; width: 100%; justify-content: center;" onclick="loadFromHistory(${index})">Empezar Examen</button>
+                </div>
             </div>
         `;
         ui.historyList.appendChild(div);
     });
+
+    // Add listeners to checkboxes
+    document.querySelectorAll('.repo-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateDeleteBtnVisibility);
+    });
+}
+
+function updateDeleteBtnVisibility() {
+    const hasSel = document.querySelectorAll('.repo-checkbox:checked').length > 0;
+    if (hasSel) ui.deleteSelectedBtn.classList.remove('hidden');
+    else ui.deleteSelectedBtn.classList.add('hidden');
+}
+
+function selectAllExams() {
+    const allCb = document.querySelectorAll('.repo-checkbox');
+    const allChecked = Array.from(allCb).every(cb => cb.checked);
+    allCb.forEach(cb => cb.checked = !allChecked);
+    updateDeleteBtnVisibility();
+}
+
+function deleteSelectedExams() {
+    const selectedCb = Array.from(document.querySelectorAll('.repo-checkbox:checked'));
+    if (selectedCb.length === 0) return;
+    
+    if (confirm(`¿Seguro que deseas borrar ${selectedCb.length} exámenes de tu Repositorio?`)) {
+        // Collect indices descending to avoid shifting issues when deleting
+        const indices = selectedCb.map(cb => parseInt(cb.dataset.index)).sort((a,b) => b-a);
+        let history = getHistory();
+        indices.forEach(i => history.splice(i, 1));
+        localStorage.setItem('testlab-history', JSON.stringify(history));
+        renderHistory();
+        showToast('Exámenes borrados');
+    }
 }
 
 window.loadFromHistory = function(index) {

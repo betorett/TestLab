@@ -132,16 +132,31 @@
             </div>
             <p>Copia este texto y envíaselo a ChatGPT, Claude, Gemini o tu IA favorita para que te genere el archivo exacto que necesitas:</p>
             <div class="prompt-box">
-                <pre id="prompt-text">Genera un examen tipo test basado en [INSERTA TUS APUNTES / ENLACE / TEMA] y formatéalo como un archivo CSV válido.
+                <pre id="prompt-text">Genera un examen tipo test basado en los archivos que te proporcione el usuario y formatéalo como un archivo CSV válido.
+
 Reglas estrictas para el CSV:
+
 1. No incluyas cabeceras en el CSV.
+
 2. Utiliza siempre el punto y coma (;) como separador de columnas para evitar conflictos con las comas del texto, o asegura que el texto con comas esté entre dobles comillas "".
+
 3. Cada fila representará una pregunta. Puede tener un número infinito de columnas de opciones de este modo:
+
 [Pregunta] ; [SINGLE o MULTIPLE] ; [Opción A] ; [Opción B] ; [N Opciones extra...] ; [Respuesta]
+
 4. La segunda posición debe ser el texto SINGLE (si hay 1 solución) o MULTIPLE (si hay varias).
+
 5. La última posición debe ser la respuesta (o respuestas) correctas. Si es SINGLE usa la letra (ej: A). Si es MULTIPLE, usa letras separadas por pipe (ej: A|C).
-6. Entrégame el resultado directamente en formato CSV crudo dentro de un bloque de código para que yo pueda guardarlo en un archivo .csv fácilmente.</pre>
+
+6. Entrégame el resultado directamente en un archivo .csv.</pre>
                 <button id="copy-prompt-btn" class="nav-btn primary">Copiar Prompt</button>
+            </div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">O usa directamente nuestro Gem de Google para generar tests automáticamente:</p>
+                <a href="https://gemini.google.com/gem/1kTBWN4ZZ0rlxpnbaalrRotSjX-vYZHcO?usp=sharing" target="_blank" rel="noopener noreferrer" class="nav-btn primary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; justify-content: center; width: 100%;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 11.5 8.5 8 12C11.5 15.5 12 22 12 22C12 22 12.5 15.5 16 12C12.5 8.5 12 2 12 2Z" fill="currentColor"/></svg>
+                    Abrir Gem de TestLab
+                </a>
             </div>
         </div>
     </dialog>

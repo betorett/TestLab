@@ -59,6 +59,9 @@ const ui = {
     
     // modal
     aiModal: $('ai-prompt-modal'),
+    openAddModalBtn: $('open-add-modal-btn'),
+    closeAddModalBtn: $('close-add-modal'),
+    addExamModal: $('add-exam-modal'),
     openAiPromptBtn: $('open-ai-prompt'),
     closeModalBtn: $('close-modal'),
     copyPromptBtn: $('copy-prompt-btn'),
@@ -139,8 +142,16 @@ function init() {
     });
     ui.loadPasteBtn.addEventListener('click', () => {
         const text = ui.pasteInput.value.trim();
-        if (text) processText(text);
+        if (text) {
+            processText(text);
+            ui.addExamModal.close();
+        }
     });
+
+    if (ui.openAddModalBtn) {
+        ui.openAddModalBtn.addEventListener('click', () => ui.addExamModal.showModal());
+        ui.closeAddModalBtn.addEventListener('click', () => ui.addExamModal.close());
+    }
 
     // Repository Nav & Selection
     ui.selectAllBtn.addEventListener('click', selectAllExams);
@@ -218,6 +229,7 @@ function checkIfDone(processed, total) {
     if (processed === total) {
         ui.fileInput.value = ''; // reset
         renderHistory();
+        ui.addExamModal.close();
         showToast(`${total} archivo(s) añadido(s) al repositorio`);
     }
 }

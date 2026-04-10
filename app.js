@@ -323,6 +323,9 @@ function renderQuestion() {
 
     // Actualiza las clases visuales de los botones sin borrar el DOM
     updateOptionsUI();
+    
+    // Render LaTeX equations if any
+    renderMath(ui.questionContainer);
 }
 
 // updateOptionsUI: Muta las clases CSS sobre los botones ya inyectados
@@ -765,6 +768,8 @@ function renderHistory() {
     document.querySelectorAll('.repo-checkbox').forEach(cb => {
         cb.addEventListener('change', updateDeleteBtnVisibility);
     });
+
+    renderMath(ui.historyList);
 }
 
 function updateDeleteBtnVisibility() {
@@ -855,3 +860,18 @@ function resetApp() {
 
 // Run
 init();
+
+// ===== LATEX RENDERER =====
+function renderMath(element) {
+    if (window.renderMathInElement) {
+        renderMathInElement(element, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '\\[', right: '\\]', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false}
+            ],
+            throwOnError: false
+        });
+    }
+}

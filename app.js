@@ -107,9 +107,6 @@ function init() {
         }
     });
 
-    renderHistory();
-
-
     // Upload setup
     ui.dropZone.addEventListener('click', () => ui.fileInput.click());
     ui.browseBtn.addEventListener('click', e => { e.stopPropagation(); ui.fileInput.click(); });
@@ -163,6 +160,9 @@ function init() {
     ui.reviewBtn.addEventListener('click', startReview);
     ui.restartBtn.addEventListener('click', resetApp);
     ui.generateReportBtn.addEventListener('click', generateFinalReport);
+
+    // Render original state
+    renderHistory();
 }
 
 // ===== THEME =====

@@ -172,6 +172,7 @@ Operaciones:
 - `moveInOrder(kind, id, direction)` con `kind` `folder` o `test` y `direction` `-1` o `1`. `limit` en un extremo. Cambia el orden manual guardado aunque la preferencia visible sea otra; la UI solo deja el botón activo en Manual.
 - `getSort()` / `setSort(mode)`
 - `getTest(id)` → la entrada del historial, o `null`. No coacciona preguntas.
+- `listFolders()` → `{ id, name, path }[]` en preorden del árbol visible. `path` une los nombres con ` / `. No escribe. Si el índice no se aplica, el array va vacío. Sirve para los `<select>` de importar y de mover, que construyen cada `option` con `textContent`.
 
 `createFolder(parentId, name)` con un `parentId` que no existe devuelve `missing`. `parentId === null` crea la carpeta en la raíz. El recuento de borrado recorre los hijos con un conjunto de ids ya vistos y se detiene ante un ciclo, para no contar dos veces ni colgarse.
 

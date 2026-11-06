@@ -355,13 +355,13 @@ function renderCurrent() {
   ui.counter.textContent = `${currentIndex + 1} / ${questions.length}`;
   const answeredCount = userAnswers.filter((item, index) => countsAsAnswered(questions[index], item)).length;
   ui.progressFill.style.width = `${(answeredCount / questions.length) * 100}%`;
-  renderQuestion(ui.questionContainer, question, answer, {
+  const rendered = renderQuestion(ui.questionContainer, question, answer, {
     idPrefix: `q${currentIndex}`,
     reveal: shouldReveal(question, answer),
     optionOrder: optionOrders[currentIndex],
     onAnswer
   });
-  renderMath(ui.questionContainer);
+  if (!rendered?.preserved) renderMath(ui.questionContainer);
   const status = ui.questionContainer.querySelector('.answer-status');
   ui.questionStatus.textContent = status ? status.textContent : '';
   updateNavButtons();

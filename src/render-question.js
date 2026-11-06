@@ -1,6 +1,8 @@
 import { gradeQuestion } from './grade.js';
 import { normalizeAnswerText, normalizeUnit } from './text.js';
 
+const TEXT_TYPES = new Set(['FILL_BLANK', 'NUMERIC', 'SHORT_ANSWER']);
+
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
   if (className) node.className = className;
@@ -8,7 +10,61 @@ function el(doc, tag, className, text) {
   return node;
 }
 
+function questionDomKey(question) {
+  if (question.type === 'FILL_BLANK') return `FILL_BLANK:${question.prompt}:${question.body.blanks.length}`;
+  if (question.type === 'NUMERIC') return `NUMERIC:${question.prompt}:${question.body.unit || ''}`;
+  if (question.type === 'SHORT_ANSWER') return `SHORT_ANSWER:${question.prompt}`;
+  return question.type;
+}
+
+function liveKey(question, ctx) {
+  return `${ctx.idPrefix}:${questionDomKey(question)}`;
+}
+
+function canPreserveTextEntry(container, question, ctx) {
+  if (ctx.reveal || !TEXT_TYPES.has(question.type)) return false;
+  if (container.dataset.liveKey !== liveKey(question, ctx)) return false;
+  if (container.dataset.revealed === 'true') return false;
+  const active = container.ownerDocument.activeElement;
+  if (!active || !container.contains(active)) return false;
+  if (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA') return false;
+  if (active.disabled || active.readOnly) return false;
+  return true;
+}
+
+function syncStatus(container, question, answer, ctx) {
+  const text = statusText(question, answer, ctx);
+  const status = container.querySelector('.answer-status');
+  if (!text) {
+    status?.remove();
+    return;
+  }
+  if (!status) {
+    container.append(el(container.ownerDocument, 'p', 'answer-status', text));
+    return;
+  }
+  if (status.textContent !== text) status.textContent = text;
+}
+
+function syncShortVerdict(container, answer) {
+  const actions = container.querySelector('.short-actions');
+  if (!actions) return;
+  const [correct, incorrect] = actions.querySelectorAll('button');
+  if (!correct || !incorrect) return;
+  const verdict = answer?.verdict;
+  correct.classList.toggle('is-correct', verdict === 'correct');
+  incorrect.classList.toggle('is-incorrect', verdict === 'incorrect');
+  correct.setAttribute('aria-pressed', String(verdict === 'correct'));
+  incorrect.setAttribute('aria-pressed', String(verdict === 'incorrect'));
+}
+
 export function renderQuestion(container, question, answer, ctx) {
+  if (canPreserveTextEntry(container, question, ctx)) {
+    syncStatus(container, question, answer, ctx);
+    if (question.type === 'SHORT_ANSWER') syncShortVerdict(container, answer);
+    return { preserved: true };
+  }
+
   const doc = container.ownerDocument;
   container.replaceChildren();
   appendImage(container, question);
@@ -46,6 +102,9 @@ export function renderQuestion(container, question, answer, ctx) {
 
   const status = statusText(question, answer, ctx);
   if (status) container.append(el(doc, 'p', 'answer-status', status));
+  container.dataset.liveKey = TEXT_TYPES.has(question.type) ? liveKey(question, ctx) : '';
+  container.dataset.revealed = ctx.reveal ? 'true' : 'false';
+  return { preserved: false };
 }
 
 function appendImage(container, question) {
@@ -143,10 +202,7 @@ function renderBlanks(container, question, answer, ctx) {
       input.setAttribute('aria-invalid', String(!ok));
     }
     input.addEventListener('input', () => {
-      const next = question.body.blanks.map((_, blankIndex) => (
-        blankIndex === index ? input.value : (values[blankIndex] || '')
-      ));
-      ctx.onAnswer(next);
+      ctx.onAnswer(inputs.map((field) => field.value));
     });
     return input;
   });
@@ -190,7 +246,12 @@ function renderNumeric(container, question, answer, ctx) {
   const hint = el(doc, 'p', 'meta', `Tolerancia absoluta ±${question.body.tolerance}. Usa coma o punto decimal.`);
   hint.id = `${ctx.idPrefix}-hint`;
   value.setAttribute('aria-describedby', hint.id);
-  value.addEventListener('input', () => ctx.onAnswer({ value: value.value, unit: current.unit || '' }));
+  let unit = null;
+  const publishNumeric = () => ctx.onAnswer({
+    value: value.value,
+    unit: unit ? unit.value : ''
+  });
+  value.addEventListener('input', publishNumeric);
 
   const group = el(doc, 'div', 'numeric-fields');
   group.append(valueLabel, value, hint);
@@ -198,13 +259,13 @@ function renderNumeric(container, question, answer, ctx) {
     const unitId = `${ctx.idPrefix}-unit`;
     const unitLabel = el(doc, 'label', null, `Unidad (${question.body.unit})`);
     unitLabel.htmlFor = unitId;
-    const unit = doc.createElement('input');
+    unit = doc.createElement('input');
     unit.type = 'text';
     unit.id = unitId;
     unit.autocomplete = 'off';
     unit.spellcheck = false;
     unit.value = current.unit || '';
-    unit.addEventListener('input', () => ctx.onAnswer({ value: current.value || '', unit: unit.value }));
+    unit.addEventListener('input', publishNumeric);
     group.append(unitLabel, unit);
     if (ctx.reveal) {
       const matches = normalizeUnit(unit.value) === normalizeUnit(question.body.unit);
@@ -311,9 +372,8 @@ function renderShort(container, question, answer, ctx) {
   const incorrect = el(doc, 'button', 'nav-btn', 'La he fallado');
   incorrect.type = 'button';
   incorrect.setAttribute('aria-pressed', String(current.verdict === 'incorrect'));
-  const textNow = current.text || '';
-  correct.addEventListener('click', () => ctx.onAnswer({ text: textNow, verdict: 'correct' }));
-  incorrect.addEventListener('click', () => ctx.onAnswer({ text: textNow, verdict: 'incorrect' }));
+  correct.addEventListener('click', () => ctx.onAnswer({ text: area.value, verdict: 'correct' }));
+  incorrect.addEventListener('click', () => ctx.onAnswer({ text: area.value, verdict: 'incorrect' }));
   if (current.verdict === 'correct') correct.classList.add('is-correct');
   if (current.verdict === 'incorrect') incorrect.classList.add('is-incorrect');
   const actions = el(doc, 'div', 'short-actions');

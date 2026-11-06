@@ -18,3 +18,5 @@ npm-debug.log*
 # Local server
 node_modules/
 dist/
+test-results/
+playwright-report/

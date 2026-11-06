@@ -270,7 +270,31 @@ Ajustes, prompt, carpeta, mover y borrado usan `<dialog>` abierto con `showModal
 
 Ajustes conserva la penalización, el texto de que un modelo no garantiza el esquema, «Ver Prompt de IA» y «Guardar Ajustes». El prompt conserva el texto de `SYSTEM_PROMPT_JSON_V1`, «Copiar Prompt» y el enlace al Gem. Crear, renombrar y mover conservan sus títulos, «Nombre», «Destino», el error `#library-dialog-error` con `role="alert"` y el formulario `method="dialog"`.
 
-No se asigna `display` a `dialog` fuera de `dialog[open]`. El centrado manual con `transform: translate(-50%, -50%)` se quita; el diálogo modal lo coloca el navegador. La ficha interior tiene padding de 16px, `max-width: min(32rem, calc(100vw - 32px))` y el diálogo `max-height: min(90dvh, 40rem)` con `overflow: auto`.
+No se asigna `display` a `dialog` ni a `.modal`, ni abierto ni cerrado. Un diálogo cerrado sigue con `display: none` del agente de usuario. Uno abierto sigue en `display: block`. `.modal` no repite `position: fixed`: lo pone la hoja del agente de usuario en `dialog:modal` mientras el diálogo está en modal, y el valor calculado entonces es `fixed`.
+
+El bloque actual de `.modal` es `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0`. Quitar solo `transform` deja el borde superior izquierdo en el centro del viewport y recorta el diálogo. Ese bloque se sustituye entero. La regla de autor no declara `position`, `top`, `right`, `bottom`, `left`, `inset` ni `inset-inline`.
+
+`inset-inline` no se declara. La hoja del agente ya ancla `dialog` con `inset-inline-start: 0` e `inset-inline-end: 0`, y `dialog:modal` con `inset-block-start: 0` e `inset-block-end: 0`. Poner `inset-inline: auto`, o `top`/`right`/`bottom`/`left` en `auto`, gana a esos anclajes y pega el diálogo a la esquina de inicio. En Chromium, con un cuadro más bajo que el viewport, el centro vertical queda desplazado hacia arriba exactamente la mitad del espacio libre, y los márgenes calculados pasan a `0px`. `inset-inline: 0` repetiría el anclaje inline y no hace falta si la regla de autor no toca los cuatro lados. La palabra `auto` en el autor, para estos cuatro lados, no es el centrado nativo.
+
+Con los lados sin declarar, el diálogo abierto calcula `top`, `right`, `bottom` y `left` en `0px`, `transform` en `none` y `margin` automático repartido a partes iguales en cada eje. `margin: auto` sí se escribe en `.modal`, para no heredar el `margin: 0` viejo. `transform: none` también se escribe, para no heredar el traslado.
+
+```css
+.modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  box-sizing: border-box;
+  width: min(32rem, calc(100vw - 32px));
+  max-width: min(32rem, calc(100vw - 32px));
+  height: fit-content;
+  max-height: min(90dvh, 40rem);
+  overflow: auto;
+  transform: none;
+  margin: auto;
+}
+```
+
+`box-sizing: border-box` vale también por el reset global; se repite en `.modal` para que el ancho incluya el borde y el padding de esta regla, que son cero. A 320px de ancho, `32rem` son 512px y `100vw - 32px` son 288px, así que el ancho usado es 288px y quedan 16px de margen a cada lado. A 568px de alto, `90dvh` son 511,2px, por debajo de `40rem`, y ese es el `max-height`. Si el contenido pasa de ahí, el scroll es el del diálogo y el borde sigue dentro del viewport. `.modal-content` ocupa el 100% de ese ancho, con `box-sizing: border-box` y padding de 16px, sin un `max-width` propio que vuelva a empujar el cuadro.
 
 ```css
 dialog:modal { overscroll-behavior: contain; }
@@ -387,6 +411,7 @@ Extremo a extremo, Playwright, sin scroll horizontal (`document.documentElement.
 - Con 30 tests, el `summary` de acciones del último entra en el viewport al desplazar el documento.
 - `body` y `html` no tienen `overflow: hidden` en el estilo calculado.
 - Con la biblioteca activa, las otras cuatro pantallas tienen el atributo `hidden` y `display` calculado `none`, y un localizador que ignora lo oculto no las encuentra.
+- La prueba Playwright `native dialog centering clears the old fixed offsets`, con viewport 320×568, abre `#settings-modal` desde `#settings-btn` y lee el estilo calculado del propio diálogo: `position` es `fixed`; `top`, `right`, `bottom` y `left` son `0px`; `transform` es `none`; `margin-left` igual a `margin-right` y `margin-top` igual a `margin-bottom`. El centro del borde queda a 1px o menos del centro del viewport en los dos ejes. `left >= 0`, `top >= 0`, `right <=` ancho del viewport y `bottom <=` alto del viewport. Escape cierra el diálogo y devuelve el foco a `#settings-btn`. Cerrado, `display` calculado es `none`. Una aserción de `test/modal-centering.test.js` lee la regla `.modal` de `style.css` y exige `margin: auto`, `transform: none`, `box-sizing: border-box`, el ancho `min(32rem, calc(100vw - 32px))` y el `max-height: min(90dvh, 40rem)`, y rechaza `top: 50%`, `left: 50%`, `translate(-50%`, `margin: 0`, `position: fixed`, `inset-inline` y cualquier `display` dentro de esa regla.
 - Abrir ajustes deja el foco dentro del diálogo. Escape lo devuelve a `#settings-btn`.
 - Tab hasta «Importar test» muestra un contorno que no es `none`.
 - En un examen, `progress` tiene `max` igual al número de preguntas, un valor igual a las respondidas y el nombre accesible «Progreso del examen».
@@ -400,7 +425,7 @@ La compacidad se considera lograda cuando, a 390×844 con un test ya importado, 
 
 ## Archivos de la implementación posterior
 
-Cuando Vicent apruebe este spec, el plan —que este cambio no escribe— puede tocar:
+El plan está en `docs/superpowers/plans/2026-11-06-ui-compacta.md`. Este spec no cambia la interfaz. La implementación, en otra rama, puede tocar:
 
 - `index.html`, `style.css`, `app.js`
 - `src/library.js` (solo las dos cadenas de la raíz)
@@ -415,4 +440,4 @@ No entran `src/grade.js`, `src/score.js`, `src/csv-bank.js`, `src/json-bank.js`,
 
 ## Fuera de este cambio
 
-No se implementa el rediseño, no se fusiona y no se despliega. No hay plan en `docs/superpowers/plans/`. El siguiente paso, después de que Vicent revise este archivo, es escribir ese plan.
+Este commit no modifica HTML, CSS, JavaScript, tests, iconos ni el manifiesto. No se fusiona la PR #3 y no se despliega. La implementación no se hace en esta rama.

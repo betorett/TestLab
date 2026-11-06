@@ -362,18 +362,32 @@ function renderShort(container, question, answer, ctx) {
   area.id = id;
   area.rows = 4;
   area.value = current.text || '';
-  area.addEventListener('input', () => ctx.onAnswer({ text: area.value, verdict: null }));
+  const locked = Boolean(ctx.reveal);
+  area.readOnly = locked;
+  area.addEventListener('input', () => {
+    if (locked) {
+      area.value = current.text || '';
+      return;
+    }
+    ctx.onAnswer({ text: area.value, verdict: null });
+  });
   const model = el(doc, 'p', 'model-answer');
   const modelLabel = el(doc, 'span', 'model-label', 'Respuesta modelo: ');
   model.append(modelLabel, doc.createTextNode(question.body.modelAnswer));
   const correct = el(doc, 'button', 'nav-btn', 'La he acertado');
   correct.type = 'button';
+  correct.disabled = locked;
   correct.setAttribute('aria-pressed', String(current.verdict === 'correct'));
   const incorrect = el(doc, 'button', 'nav-btn', 'La he fallado');
   incorrect.type = 'button';
+  incorrect.disabled = locked;
   incorrect.setAttribute('aria-pressed', String(current.verdict === 'incorrect'));
-  correct.addEventListener('click', () => ctx.onAnswer({ text: area.value, verdict: 'correct' }));
-  incorrect.addEventListener('click', () => ctx.onAnswer({ text: area.value, verdict: 'incorrect' }));
+  const choose = (verdict) => {
+    if (locked) return;
+    ctx.onAnswer({ text: area.value, verdict });
+  };
+  correct.addEventListener('click', () => choose('correct'));
+  incorrect.addEventListener('click', () => choose('incorrect'));
   if (current.verdict === 'correct') correct.classList.add('is-correct');
   if (current.verdict === 'incorrect') incorrect.classList.add('is-incorrect');
   const actions = el(doc, 'div', 'short-actions');

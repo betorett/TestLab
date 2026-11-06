@@ -88,14 +88,48 @@ test('short answers show the model and never turn green from matching text', () 
     verdict: null
   }, {
     idPrefix: 'short',
-    reveal: true,
+    reveal: false,
     onAnswer(next) { updates.push(next); }
   });
   assert.match(root.textContent, /Conservar el movimiento/);
   assert.match(root.textContent, /Pendiente de autoevaluación/);
   assert.equal(root.querySelector('.is-correct'), null);
   const ok = [...root.querySelectorAll('button')].find((button) => button.textContent.includes('acertado'));
+  assert.equal(ok.disabled, false);
   ok.click();
   assert.equal(updates[0].verdict, 'correct');
   assert.equal(updates[0].text, model);
+});
+
+test('review keeps a short answer visible and refuses verdict changes', () => {
+  const root = mount();
+  const updates = [];
+  const text = 'una respuesta distinta del modelo';
+  renderQuestion(root, base('SHORT_ANSWER', { modelAnswer: 'Modelo visible' }), {
+    text,
+    verdict: 'incorrect'
+  }, {
+    idPrefix: 'short',
+    reveal: true,
+    onAnswer(next) { updates.push(next); }
+  });
+  const area = root.querySelector('textarea');
+  const buttons = [...root.querySelectorAll('.short-actions button')];
+  const passed = buttons.find((button) => button.textContent.includes('acertado'));
+  const failed = buttons.find((button) => button.textContent.includes('fallado'));
+  assert.equal(area.value, text);
+  assert.equal(area.readOnly, true);
+  assert.equal(area.disabled, false);
+  assert.match(root.textContent, /Modelo visible/);
+  assert.match(root.textContent, /Marcada como incorrecta/);
+  assert.equal(buttons.length, 2);
+  assert.ok(buttons.every((button) => button.disabled));
+  assert.equal(failed.getAttribute('aria-pressed'), 'true');
+  assert.equal(passed.getAttribute('aria-pressed'), 'false');
+  failed.dispatchEvent(new root.ownerDocument.defaultView.Event('click', { bubbles: true }));
+  passed.dispatchEvent(new root.ownerDocument.defaultView.Event('click', { bubbles: true }));
+  area.value = 'texto mutado';
+  area.dispatchEvent(new root.ownerDocument.defaultView.Event('input', { bubbles: true }));
+  assert.deepEqual(updates, []);
+  assert.equal(area.value, text);
 });

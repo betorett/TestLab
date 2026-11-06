@@ -270,3 +270,80 @@ test('single, matching and ordering controls stay usable during the exam', async
   await page.getByRole('button', { name: 'Confirmar este orden' }).click();
   await expect(page.locator('.ordering-list')).toContainText('Ejecutar');
 });
+
+test('review keeps the short answer and score when verdict buttons are pressed', async ({ page }) => {
+  const reviewBank = {
+    schemaVersion: 1,
+    title: 'Revisión corta',
+    questions: [
+      {
+        type: 'SHORT_ANSWER',
+        prompt: '¿Qué es la inercia?',
+        modelAnswer: 'Tendencia a conservar el movimiento'
+      },
+      {
+        type: 'FILL_BLANK',
+        prompt: 'La capital es ___.',
+        blanks: [['París', 'Paris']]
+      }
+    ]
+  };
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Pegar texto manualmente' }).click();
+  await page.locator('#paste-input').fill(JSON.stringify(reviewBank));
+  await page.getByRole('button', { name: 'Añadir al Repositorio' }).click();
+  await expect(page.locator('#import-errors')).toBeEmpty();
+  await page.getByRole('button', { name: 'Empezar examen' }).click();
+  await page.getByRole('button', { name: /Modo Examen/ }).click();
+
+  const area = page.getByLabel('Tu respuesta');
+  await area.click();
+  await area.pressSequentially('texto guardado', { delay: 10 });
+  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'La he fallado' })).toBeEnabled();
+  await page.getByRole('button', { name: 'La he acertado' }).click();
+  await expect(page.locator('.answer-status')).toHaveText('Marcada como correcta');
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  await page.getByLabel('Hueco 1').pressSequentially('Paris', { delay: 10 });
+  await page.getByRole('button', { name: 'Finalizar' }).click();
+  await expect(page.locator('#results-screen')).toHaveClass(/active/);
+  const score = await page.locator('#final-score').innerText();
+  const detail = await page.locator('#score-detail').innerText();
+
+  await page.getByRole('button', { name: 'Ver detalles' }).click();
+  await expect(page.getByText('Tendencia a conservar el movimiento')).toBeVisible();
+  await expect(page.locator('.answer-status')).toHaveText('Marcada como correcta');
+  await expect(area).toHaveValue('texto guardado');
+  await expect(area).toHaveJSProperty('readOnly', true);
+  const correct = page.getByRole('button', { name: 'La he acertado' });
+  const incorrect = page.getByRole('button', { name: 'La he fallado' });
+  await expect(correct).toBeDisabled();
+  await expect(incorrect).toBeDisabled();
+  await expect(correct).toHaveAttribute('aria-pressed', 'true');
+
+  await area.focus();
+  await page.keyboard.type('MUTACION');
+  await expect(area).toHaveValue('texto guardado');
+  await incorrect.evaluate((button) => {
+    const view = button.ownerDocument.defaultView;
+    button.dispatchEvent(new view.MouseEvent('click', { bubbles: true }));
+  });
+  await correct.evaluate((button) => {
+    const view = button.ownerDocument.defaultView;
+    button.dispatchEvent(new view.MouseEvent('click', { bubbles: true }));
+  });
+  await expect(page.locator('.answer-status')).toHaveText('Marcada como correcta');
+  await expect(area).toHaveValue('texto guardado');
+  await expect(correct).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  const blank = page.getByLabel('Hueco 1');
+  await expect(blank).toHaveValue('Paris');
+  await expect(blank).toBeDisabled();
+  await blank.focus();
+  await page.keyboard.type('Roma');
+  await expect(blank).toHaveValue('Paris');
+  await page.getByRole('button', { name: 'Volver a resultados' }).click();
+  await expect(page.locator('#final-score')).toHaveText(score);
+  await expect(page.locator('#score-detail')).toHaveText(detail);
+});

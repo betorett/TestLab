@@ -1,0 +1,84 @@
+{
+  "$schema": "../schema/testlab-bank-v1.schema.json",
+  "schemaVersion": 1,
+  "title": "Banco mixto",
+  "questions": [
+    {
+      "id": "capital",
+      "type": "SINGLE",
+      "prompt": "¿Qué capital está marcada?",
+      "image": {
+        "src": "examples/figura.svg",
+        "alt": "Marca violeta sobre un esquema"
+      },
+      "choices": [
+        { "id": "A", "text": "Lisboa" },
+        { "id": "B", "text": "Madrid" },
+        { "id": "C", "text": "París" }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": "pares",
+      "type": "MULTIPLE",
+      "prompt": "¿Qué números son pares?",
+      "choices": [
+        { "id": "A", "text": "2" },
+        { "id": "B", "text": "3" },
+        { "id": "C", "text": "4" }
+      ],
+      "answer": ["A", "C"]
+    },
+    {
+      "id": "hielo",
+      "type": "TRUE_FALSE",
+      "prompt": "El hielo flota en el agua líquida",
+      "answer": true
+    },
+    {
+      "id": "francia",
+      "type": "FILL_BLANK",
+      "prompt": "La capital de Francia es ___.",
+      "blanks": [["París", "Paris"]]
+    },
+    {
+      "id": "limita",
+      "type": "FILL_BLANK",
+      "prompt": "La ___ limita con ___.",
+      "blanks": [["Francia"], ["España"]]
+    },
+    {
+      "id": "gravedad",
+      "type": "NUMERIC",
+      "prompt": "Gravedad estándar",
+      "answer": { "value": 9.81, "tolerance": 0.05, "unit": "m/s^2" }
+    },
+    {
+      "id": "triangulo",
+      "type": "NUMERIC",
+      "prompt": "¿Cuántos lados tiene un triángulo?",
+      "answer": { "value": 3, "tolerance": 0 }
+    },
+    {
+      "id": "capitales",
+      "type": "MATCHING",
+      "prompt": "Empareja cada capital",
+      "pairs": [
+        { "left": "Madrid", "right": "España" },
+        { "left": "Roma", "right": "Italia" }
+      ]
+    },
+    {
+      "id": "ciclo",
+      "type": "ORDERING",
+      "prompt": "Orden del ciclo",
+      "items": ["Planificar", "Ejecutar", "Comprobar"]
+    },
+    {
+      "id": "inercia",
+      "type": "SHORT_ANSWER",
+      "prompt": "¿Qué es la inercia?",
+      "modelAnswer": "Tendencia de un cuerpo a conservar su estado de movimiento"
+    }
+  ]
+}

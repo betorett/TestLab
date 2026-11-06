@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "testlab-bank-v1.schema.json",
+  "title": "TestLab question bank v1",
+  "description": "Contrato de un banco de preguntas TestLab. Las URLs de imagen, la coincidencia de huecos ___ y que la respuesta sea un id existente se comprueban además en el validador de la aplicación.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "questions"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/question" }
+    }
+  },
+  "$defs": {
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src"],
+      "properties": {
+        "src": {
+          "type": "string",
+          "minLength": 1,
+          "description": "URL https o ruta relativa. javascript:, data:, file: y el resto de esquemas los rechaza el validador de la aplicación."
+        },
+        "alt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+        "text": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "right"],
+      "properties": {
+        "left": { "type": "string", "minLength": 1 },
+        "right": { "type": "string", "minLength": 1 }
+      }
+    },
+    "numericAnswer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "tolerance"],
+      "properties": {
+        "value": { "type": "number" },
+        "tolerance": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string", "minLength": 1 }
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "prompt"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": ["SINGLE", "MULTIPLE", "TRUE_FALSE", "FILL_BLANK", "NUMERIC", "MATCHING", "ORDERING", "SHORT_ANSWER"]
+        },
+        "prompt": { "type": "string", "minLength": 1 },
+        "image": { "$ref": "#/$defs/image" },
+        "choices": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/choice" }
+        },
+        "answer": {},
+        "blanks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/pair" }
+        },
+        "items": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "modelAnswer": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "SINGLE" } }, "required": ["type"] },
+          "then": {
+            "required": ["choices", "answer"],
+            "properties": {
+              "choices": { "type": "array" },
+              "answer": { "type": "string", "minLength": 1 },
+              "blanks": false,
+              "pairs": false,
+              "items": false,
+              "modelAnswer": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "MULTIPLE" } }, "required": ["type"] },
+          "then": {
+            "required": ["choices", "answer"],
+            "properties": {
+              "choices": { "type": "array" },
+              "answer": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "blanks": false,
+              "pairs": false,
+              "items": false,
+              "modelAnswer": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "TRUE_FALSE" } }, "required": ["type"] },
+          "then": {
+            "required": ["answer"],
+            "properties": {
+              "answer": { "type": "boolean" },
+              "choices": false,
+              "blanks": false,
+              "pairs": false,
+              "items": false,
+              "modelAnswer": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "FILL_BLANK" } }, "required": ["type"] },
+          "then": {
+            "required": ["blanks"],
+            "properties": {
+              "blanks": { "type": "array" },
+              "choices": false,
+              "answer": false,
+              "pairs": false,
+              "items": false,
+              "modelAnswer": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "NUMERIC" } }, "required": ["type"] },
+          "then": {
+            "required": ["answer"],
+            "properties": {
+              "answer": { "$ref": "#/$defs/numericAnswer" },
+              "choices": false,
+              "blanks": false,
+              "pairs": false,
+              "items": false,
+              "modelAnswer": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "MATCHING" } }, "required": ["type"] },
+          "then": {
+            "required": ["pairs"],
+            "properties": {
+              "pairs": { "type": "array" },
+              "choices": false,
+              "answer": false,
+              "blanks": false,
+              "items": false,
+              "modelAnswer": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "ORDERING" } }, "required": ["type"] },
+          "then": {
+            "required": ["items"],
+            "properties": {
+              "items": { "type": "array" },
+              "choices": false,
+              "answer": false,
+              "blanks": false,
+              "pairs": false,
+              "modelAnswer": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "SHORT_ANSWER" } }, "required": ["type"] },
+          "then": {
+            "required": ["modelAnswer"],
+            "properties": {
+              "modelAnswer": { "type": "string" },
+              "choices": false,
+              "answer": false,
+              "blanks": false,
+              "pairs": false,
+              "items": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

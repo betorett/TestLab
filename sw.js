@@ -1,11 +1,27 @@
-const CACHE_NAME = 'testlab-v7';
+const CACHE_NAME = 'testlab-v10';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './icon.png',
-  './manifest.json'
+  './manifest.json',
+  './src/ai-prompt.js',
+  './src/csv-bank.js',
+  './src/grade.js',
+  './src/image-url.js',
+  './src/import-bank.js',
+  './src/json-bank.js',
+  './src/library.js',
+  './src/render-history.js',
+  './src/render-library.js',
+  './src/render-question.js',
+  './src/report.js',
+  './src/repository.js',
+  './src/score.js',
+  './src/session.js',
+  './src/storage.js',
+  './src/text.js',
+  './src/validate-bank.js'
 ];
 
 self.addEventListener('install', (e) => {

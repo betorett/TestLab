@@ -102,7 +102,7 @@ La lectura no escribe `testlab-history`. La primera operación que ya reescribe 
 
 `updateScore` busca por `id`. La pantalla de examen recuerda el `id` del test abierto, no solo el nombre.
 
-Al reimportar, se sustituye un test solo cuando el destino es la misma carpeta y ya hay uno con el mismo nombre y el mismo número de preguntas. Se conserva su `id` y su posición manual; se actualizan preguntas, fecha e `importedAt`, y `lastScore` vuelve a `null`, igual que el reemplazo actual vaciaba la nota. El mismo nombre en otra carpeta crea otro test. Un banco nuevo dentro de la carpeta se inserta al principio del orden manual de tests. Un test o carpeta movidos se colocan al final del orden manual del destino.
+Al reimportar, se sustituye un test solo cuando el destino es la misma carpeta y ya hay uno con el mismo nombre y el mismo número de preguntas. Se conserva su `id` y su posición manual; se actualizan preguntas, fecha e `importedAt`, y `lastScore` vuelve a `null`, igual que el reemplazo actual vaciaba la nota. El mismo nombre en otra carpeta crea otro test. Un banco nuevo dentro de la carpeta se inserta al principio del orden manual de tests. Una carpeta recién creada se coloca al final del orden manual de subcarpetas de su padre. Un test o carpeta movidos se colocan al final del orden manual del destino.
 
 ## Almacén
 

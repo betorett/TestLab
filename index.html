@@ -48,7 +48,7 @@
 
             <div class="upload-left">
                 <div id="drop-zone" class="drop-zone">
-                    <input type="file" id="file-input" accept=".csv" multiple hidden>
+                    <input type="file" id="file-input" accept=".csv,.json,text/csv,application/json" multiple hidden>
                     <div class="drop-zone-content">
                         <div class="upload-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -57,7 +57,7 @@
                                 <line x1="12" y1="3" x2="12" y2="15"/>
                             </svg>
                         </div>
-                        <p class="drop-main">Arrastra archivos CSV aquí</p>
+                        <p class="drop-main">Arrastra archivos CSV o JSON aquí</p>
                         <p class="drop-sub">o <button type="button" class="link-btn" id="browse-btn">busca en tu equipo</button></p>
                     </div>
                 </div>
@@ -69,10 +69,11 @@
                     </button>
                     <div id="paste-collapse" class="hidden" style="margin-top: 16px;">
                         <div class="textarea-wrapper">
-                            <textarea id="paste-input" placeholder="[Pregunta] ; [SINGLE] ; [Opcion A] ; [Opcion B] ; [Respuesta]..."></textarea>
+                            <textarea id="paste-input" placeholder="CSV: Pregunta;SINGLE;Opción A;Opción B;A&#10;JSON v1: { &quot;schemaVersion&quot;: 1, &quot;questions&quot;: [ ... ] }"></textarea>
                             <button id="load-paste-btn" class="nav-btn primary" disabled>Añadir al Repositorio</button>
                         </div>
                     </div>
+                    <div id="import-errors" role="alert"></div>
                 </div>
 
                 <a href="https://gemini.google.com/gem/1kTBWN4ZZ0rlxpnbaalrRotSjX-vYZHcO?usp=sharing" target="_blank" rel="noopener noreferrer" class="nav-btn" style="width: 100%; justify-content: center; background: var(--bg-element); text-decoration: none; margin-top: 12px;">
@@ -137,23 +138,13 @@
             </div>
             <p>Copia este texto y envíaselo a ChatGPT, Claude, Gemini o tu IA favorita para que te genere el archivo exacto que necesitas:</p>
             <div class="prompt-box">
-                <pre id="prompt-text">Genera un examen tipo test basado en los archivos que te proporcione el usuario y formatéalo como un archivo CSV válido.
+<pre id="prompt-text">Genera un banco TestLab en JSON versión 1. No uses markdown. El documento debe cumplir schema/testlab-bank-v1.schema.json con "$schema": "../schema/testlab-bank-v1.schema.json" y "schemaVersion": 1.
 
-Reglas estrictas para el CSV:
+Tipos permitidos: SINGLE, MULTIPLE, TRUE_FALSE, FILL_BLANK, NUMERIC, MATCHING, ORDERING, SHORT_ANSWER. No uses IMAGE_BASED: si hay figura, añade "image": { "src": "ruta-relativa-o-https", "alt": "descripción" } a un tipo normal.
 
-1. No incluyas cabeceras en el CSV.
+SINGLE/MULTIPLE: choices con id estable (A, B, C) y answer (string o array de ids). TRUE_FALSE: answer boolean. FILL_BLANK: el enunciado marca huecos con ___ y blanks es un array de variantes por hueco. NUMERIC: answer.value, answer.tolerance (>= 0) y unit opcional, sin convertir unidades. MATCHING: pairs [{left, right}] uno a uno. ORDERING: items en el orden correcto. SHORT_ANSWER: modelAnswer; no inventes una corrección automática.
 
-2. Utiliza siempre el punto y coma (;) como separador de columnas para evitar conflictos con las comas del texto, o asegura que el texto con comas esté entre dobles comillas "".
-
-3. Cada fila representará una pregunta. Puede tener un número infinito de columnas de opciones de este modo:
-
-[Pregunta] ; [SINGLE o MULTIPLE] ; [Opción A] ; [Opción B] ; [N Opciones extra...] ; [Respuesta]
-
-4. La segunda posición debe ser el texto SINGLE (si hay 1 solución) o MULTIPLE (si hay varias).
-
-5. La última posición debe ser la respuesta (o respuestas) correctas. Si es SINGLE usa la letra (ej: A). Si es MULTIPLE, usa letras separadas por pipe (ej: A|C).
-
-6. Entrégame el resultado directamente en un archivo .csv.</pre>
+No añadas claves desconocidas. Si también piden CSV, manten el formato sin cabecera y con separador ; : Pregunta;SINGLE;Opción A;Opción B;A. La imagen CSV, si existe, va al final como IMG=ruta y IMG_ALT=texto.</pre>
                 <button id="copy-prompt-btn" class="nav-btn primary">Copiar Prompt</button>
             </div>
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center;">
@@ -220,6 +211,7 @@ Reglas estrictas para el CSV:
                 </div>
             </header>
 
+            <div id="question-status" class="visually-hidden" aria-live="polite"></div>
             <div class="question-area" id="question-container">
                 <!-- Injected via JS -->
             </div>
@@ -298,7 +290,7 @@ Reglas estrictas para el CSV:
         <span id="toast-text">Copiado al portapapeles</span>
     </div>
 
-    <script defer src="app.js"></script>
+    <script type="module" src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

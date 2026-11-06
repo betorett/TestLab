@@ -51,9 +51,10 @@ test('folders, ordering, scoring and deletion work in the browser', async ({ pag
     }]
   }]);
   await page.addInitScript((history) => {
-    if (localStorage.getItem('testlab-library-seeded') === '1') return;
-    localStorage.setItem('testlab-history', history);
-    localStorage.setItem('testlab-library-seeded', '1');
+    const storage = globalThis.localStorage;
+    if (storage.getItem('testlab-library-seeded') === '1') return;
+    storage.setItem('testlab-history', history);
+    storage.setItem('testlab-library-seeded', '1');
   }, legacy);
 
   await page.goto('/');

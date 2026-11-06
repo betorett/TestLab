@@ -1,0 +1,27 @@
+{
+  "name": "testlab",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "description": "TestLab, SPA de exámenes a partir de bancos CSV o JSON.",
+  "scripts": {
+    "test": "node --test",
+    "check:syntax": "node scripts/check-syntax.js",
+    "lint": "eslint app.js src test e2e scripts",
+    "validate:examples": "node scripts/validate-examples.js",
+    "verify:static": "node scripts/verify-static.js",
+    "check": "npm run check:syntax && npm run lint && npm run validate:examples && npm test && npm run verify:static",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "papaparse": "5.4.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1",
+    "ajv": "8.17.1",
+    "eslint": "9.16.0",
+    "globals": "15.13.0",
+    "jsdom": "25.0.1",
+    "serve": "14.2.4"
+  }
+}

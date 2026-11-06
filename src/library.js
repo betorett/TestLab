@@ -99,6 +99,13 @@ export function createLibrary(storage, now = () => new Date(), ids = defaultIds(
     };
   }
 
+  function descendantFolderIds(id) {
+    const loaded = loadIndex();
+    if (loaded.state !== 'ok') return [];
+    if (!loaded.model.folders.some((folder) => folder.id === id)) return [];
+    return descendantIds(loaded.model.folders, id);
+  }
+
   function listFolders() {
     const loaded = loadIndex();
     if (loaded.state !== 'ok') return [];
@@ -325,6 +332,7 @@ export function createLibrary(storage, now = () => new Date(), ids = defaultIds(
       next.push(pinned.entries[index]);
     });
     model.folders = model.folders.filter((folder) => !folderIds.has(folder.id));
+    deleteOrderKeys(model, folderIds);
     removeFromOrders(model, folderIds, ['folders']);
     removeFromOrders(model, removedSet, ['tests']);
     for (const testId of removedSet) delete model.placement[testId];
@@ -385,6 +393,7 @@ export function createLibrary(storage, now = () => new Date(), ids = defaultIds(
   return {
     view,
     listFolders,
+    descendantFolderIds,
     createFolder,
     renameFolder,
     moveFolder,
@@ -449,17 +458,16 @@ function bucket(model, parentId) {
 }
 
 function removeFromOrders(model, ids, kinds) {
-  for (const key of Object.keys(model.order)) {
-    if (ids.has(key)) {
-      delete model.order[key];
-      continue;
-    }
-    const entry = model.order[key];
+  for (const entry of Object.values(model.order)) {
     if (!entry) continue;
     for (const kind of kinds) {
       if (Array.isArray(entry[kind])) entry[kind] = entry[kind].filter((id) => !ids.has(id));
     }
   }
+}
+
+function deleteOrderKeys(model, ids) {
+  for (const id of ids) delete model.order[id];
 }
 
 function assignIds(entries) {

@@ -432,6 +432,30 @@ test('deleting selected tests leaves folders, and deleting a folder is recursive
   assert.equal(library.getTest(loose).name, 'Suelto');
 });
 
+test('moving a folder keeps the manual order inside it', () => {
+  const storage = memoryStorage();
+  const library = createLibrary(storage, () => new Date('2026-11-06T00:00:00.000Z'), sequentialIds());
+  const parent = library.createFolder(null, 'Padre').id;
+  const first = library.createFolder(parent, 'Uno').id;
+  library.createFolder(parent, 'Dos');
+  library.moveInOrder('folder', first, 1);
+  const host = library.createFolder(null, 'Otra').id;
+  assert.deepEqual(library.view(parent).folders.map((folder) => folder.name), ['Dos', 'Uno']);
+  assert.equal(library.moveFolder(parent, host).ok, true);
+  assert.deepEqual(library.view(parent).folders.map((folder) => folder.name), ['Dos', 'Uno']);
+  assert.equal(library.view(host).folders[0].id, parent);
+});
+
+test('descendant ids include the folder itself and nested folders', () => {
+  const storage = memoryStorage();
+  const library = createLibrary(storage, () => new Date('2026-11-06T00:00:00.000Z'), sequentialIds());
+  const parent = library.createFolder(null, 'A').id;
+  const child = library.createFolder(parent, 'B').id;
+  library.createFolder(null, 'C');
+  assert.deepEqual(new Set(library.descendantFolderIds(parent)), new Set([parent, child]));
+  assert.deepEqual(library.descendantFolderIds('no'), []);
+});
+
 test('a dangling placement is shown in Sin clasificar and is not repaired on read', () => {
   const history = JSON.stringify([
     { id: 't_1', name: 'Colgado', date: '2020-01-01', lastScore: null, questions: [question()] }

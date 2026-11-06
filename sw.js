@@ -1,10 +1,9 @@
-const CACHE_NAME = 'testlab-v8';
+const CACHE_NAME = 'testlab-v9';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './icon.png',
   './manifest.json',
   './src/csv-bank.js',
   './src/grade.js',

@@ -184,7 +184,7 @@ No hay exportador CSV→JSON. El modelo interno es el mismo, pero la migración 
 
 - No hay OCR ni visión artificial. La persona interpreta la imagen.
 - No hay conversión de unidades.
-- Una imagen `https:` depende de la red, de CORS y de que la página no la bloquee por contenido mixto. El elemento es un `<img>` normal.
+- Una imagen `https:` se pide por red con un `<img>` normal. Si la página es https, el navegador bloquea un `src` `http:` por contenido mixto. `<img>` no usa CORS para mostrarse; CORS solo intervendría si el código leyera los píxeles.
 - Una ruta relativa tiene que publicarse junto a la app. No viaja embebida dentro del CSV o del JSON.
 - SHORT_ANSWER enseña la respuesta modelo porque la nota es manual. No sirve como ítem ciego.
 - Las opciones SINGLE/MULTIPLE no se aleatorizan: no existía esa función y no se ha añadido. En emparejar y ordenar, el orden visual inicial no es la clave de corrección.

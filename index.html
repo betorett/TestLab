@@ -92,6 +92,24 @@
                             <button id="delete-selected-btn" class="nav-btn hidden" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); color: var(--incorrect); border-color: var(--incorrect);">Borrar seleccionados</button>
                         </div>
                     </div>
+                    <div class="library-toolbar">
+                        <button type="button" id="new-folder-btn" class="nav-btn">Nueva carpeta</button>
+                        <div class="library-field">
+                            <label for="library-sort">Ordenar por</label>
+                            <select id="library-sort">
+                                <option value="manual">Manual</option>
+                                <option value="name">Nombre (A–Z)</option>
+                                <option value="imported">Fecha de importación</option>
+                                <option value="score">Última nota</option>
+                            </select>
+                        </div>
+                        <div class="library-field">
+                            <label for="import-folder">Guardar en</label>
+                            <select id="import-folder">
+                                <option value="">Sin clasificar</option>
+                            </select>
+                        </div>
+                    </div>
                     <div id="history-list" class="history-list"></div>
                 </div>
             </div>
@@ -118,7 +136,7 @@
 
             <div class="settings-group" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
                 <label>Generación automática de Test:</label>
-                <p class="meta" style="margin-top: 4px; margin-bottom: 12px; line-height: 1.4;">Copia las reglas para que ChatGPT o Gemini te devuelvan el CSV 100% compatible.</p>
+                <p class="meta" style="margin-top: 4px; margin-bottom: 12px; line-height: 1.4;">Copia el prompt de sistema para que ChatGPT o Gemini generen JSON TestLab v1. Un modelo no garantiza el esquema: hay que validar el resultado.</p>
                 <button type="button" id="open-ai-prompt" class="nav-btn" style="width: 100%; justify-content: center;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                     Ver Prompt de IA
@@ -138,13 +156,7 @@
             </div>
             <p>Copia este texto y envíaselo a ChatGPT, Claude, Gemini o tu IA favorita para que te genere el archivo exacto que necesitas:</p>
             <div class="prompt-box">
-<pre id="prompt-text">Genera un banco TestLab en JSON versión 1. No uses markdown. El documento debe cumplir schema/testlab-bank-v1.schema.json con "$schema": "../schema/testlab-bank-v1.schema.json" y "schemaVersion": 1.
-
-Tipos permitidos: SINGLE, MULTIPLE, TRUE_FALSE, FILL_BLANK, NUMERIC, MATCHING, ORDERING, SHORT_ANSWER. No uses IMAGE_BASED: si hay figura, añade "image": { "src": "ruta-relativa-o-https", "alt": "descripción" } a un tipo normal.
-
-SINGLE/MULTIPLE: choices con id estable (A, B, C) y answer (string o array de ids). TRUE_FALSE: answer boolean. FILL_BLANK: el enunciado marca huecos con ___ y blanks es un array de variantes por hueco. NUMERIC: answer.value, answer.tolerance (>= 0) y unit opcional, sin convertir unidades. MATCHING: pairs [{left, right}] uno a uno. ORDERING: items en el orden correcto. SHORT_ANSWER: modelAnswer; no inventes una corrección automática.
-
-No añadas claves desconocidas. Si también piden CSV, manten el formato sin cabecera y con separador ; : Pregunta;SINGLE;Opción A;Opción B;A. La imagen CSV, si existe, va al final como IMG=ruta y IMG_ALT=texto.</pre>
+                <pre id="prompt-text"></pre>
                 <button id="copy-prompt-btn" class="nav-btn primary">Copiar Prompt</button>
             </div>
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center;">
@@ -283,6 +295,43 @@ No añadas claves desconocidas. Si también piden CSV, manten el formato sin cab
     </main>
 
     <!-- SCREEN: (Removed standalone history screen) -->
+
+    <dialog id="library-dialog" class="modal" aria-labelledby="library-dialog-title">
+        <form method="dialog" class="modal-content" id="library-form">
+            <div class="modal-header">
+                <h2 id="library-dialog-title">Carpeta</h2>
+                <button type="button" id="library-dialog-close" class="back-btn" aria-label="Cerrar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <p id="library-dialog-error" role="alert"></p>
+            <div class="library-field" id="library-name-field">
+                <label for="library-name-input">Nombre</label>
+                <input id="library-name-input" autocomplete="off">
+            </div>
+            <div class="library-field" id="library-dest-field">
+                <label for="library-dest-select">Destino</label>
+                <select id="library-dest-select"></select>
+            </div>
+            <div class="library-dialog-actions">
+                <button type="submit" class="nav-btn primary" id="library-dialog-confirm" value="confirm">Aceptar</button>
+                <button type="submit" class="nav-btn" value="cancel">Cancelar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="delete-dialog" class="modal" aria-labelledby="delete-dialog-title">
+        <form method="dialog" class="modal-content" id="delete-form">
+            <div class="modal-header">
+                <h2 id="delete-dialog-title">Confirmar borrado</h2>
+            </div>
+            <p id="delete-dialog-text"></p>
+            <div class="library-dialog-actions">
+                <button type="submit" class="nav-btn" value="cancel" id="delete-cancel" autofocus>Cancelar</button>
+                <button type="submit" class="nav-btn" id="delete-confirm" value="confirm">Borrar</button>
+            </div>
+        </form>
+    </dialog>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">

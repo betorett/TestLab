@@ -1,10 +1,11 @@
+import { SYSTEM_PROMPT_JSON_V1 } from './src/ai-prompt.js';
 import { PAPA_OPTIONS, parseCsvMatrix } from './src/csv-bank.js';
 import { gradeQuestion } from './src/grade.js';
 import { importBankText } from './src/import-bank.js';
+import { createLibrary } from './src/library.js';
 import { describeAttempt } from './src/report.js';
-import { renderHistoryList } from './src/render-history.js';
+import { renderLibrary } from './src/render-library.js';
 import { renderQuestion } from './src/render-question.js';
-import { createRepository } from './src/repository.js';
 import { scoreExam } from './src/score.js';
 import { blankAnswer, canAdvance, countsAsAnswered, isReadyToCheck, shuffleItems } from './src/session.js';
 import { coerceStoredQuestion } from './src/storage.js';
@@ -17,10 +18,13 @@ let userAnswers = [];
 let isReviewing = false;
 let isAnswerChecked = false;
 let penaltyFactor = 0.33;
-let currentExamName = '';
+let currentExamId = '';
+let currentFolderId = null;
+let pendingDelete = null;
+let libraryDialogAction = null;
 
 const $ = (id) => document.getElementById(id);
-const repository = createRepository(localStorage);
+const repository = createLibrary(localStorage);
 
 const themeToggle = $('theme-toggle');
 const htmlTag = document.documentElement;
@@ -42,6 +46,21 @@ const ui = {
   selectAllBtn: $('select-all-btn'),
   deleteSelectedBtn: $('delete-selected-btn'),
   historyList: $('history-list'),
+  newFolderBtn: $('new-folder-btn'),
+  librarySort: $('library-sort'),
+  importFolder: $('import-folder'),
+  libraryDialog: $('library-dialog'),
+  libraryForm: $('library-form'),
+  libraryDialogTitle: $('library-dialog-title'),
+  libraryDialogError: $('library-dialog-error'),
+  libraryNameField: $('library-name-field'),
+  libraryNameInput: $('library-name-input'),
+  libraryDestField: $('library-dest-field'),
+  libraryDestSelect: $('library-dest-select'),
+  libraryDialogConfirm: $('library-dialog-confirm'),
+  libraryDialogClose: $('library-dialog-close'),
+  deleteDialog: $('delete-dialog'),
+  deleteDialogText: $('delete-dialog-text'),
   importErrors: $('import-errors'),
   backToUpload: $('back-to-upload'),
   questionCountLabel: $('question-count-label'),
@@ -104,6 +123,47 @@ function init() {
     showToast('Ajustes guardados');
   });
 
+  ui.promptText.textContent = SYSTEM_PROMPT_JSON_V1;
+  ui.newFolderBtn.addEventListener('click', openNewFolderDialog);
+  ui.librarySort.addEventListener('change', () => {
+    repository.setSort(ui.librarySort.value);
+    renderHistory();
+  });
+  ui.libraryForm.addEventListener('submit', (event) => {
+    const needsName = !ui.libraryNameField.classList.contains('hidden');
+    if (event.submitter?.value === 'confirm' && needsName && ui.libraryNameInput.value.trim() === '') {
+      event.preventDefault();
+      ui.libraryDialogError.textContent = 'El nombre no puede estar vacío.';
+      ui.libraryNameInput.focus();
+    }
+  });
+  ui.libraryDialog.addEventListener('close', () => {
+    const value = ui.libraryDialog.returnValue;
+    ui.libraryDialog.returnValue = '';
+    const action = libraryDialogAction;
+    libraryDialogAction = null;
+    if (value !== 'confirm' || !action) return;
+    action({
+      name: ui.libraryNameInput.value,
+      destination: ui.libraryDestSelect.value || null
+    });
+  });
+  ui.libraryDialogClose.addEventListener('click', () => ui.libraryDialog.close());
+  ui.libraryDialog.addEventListener('click', (event) => {
+    if (event.target === ui.libraryDialog) ui.libraryDialog.close();
+  });
+  ui.deleteDialog.addEventListener('close', () => {
+    const value = ui.deleteDialog.returnValue;
+    ui.deleteDialog.returnValue = '';
+    const pending = pendingDelete;
+    pendingDelete = null;
+    if (value !== 'confirm' || !pending) return;
+    if (pending.kind === 'tests') repository.deleteTests(pending.ids);
+    else repository.deleteFolder(pending.id);
+    renderHistory();
+    showToast(pending.kind === 'tests' ? 'Exámenes borrados' : 'Carpeta eliminada');
+  });
+
   ui.openAiPromptBtn.addEventListener('click', () => ui.aiModal.showModal());
   ui.closeModalBtn.addEventListener('click', () => ui.aiModal.close());
   ui.copyPromptBtn.addEventListener('click', copyAiPrompt);
@@ -157,13 +217,7 @@ function init() {
 
   ui.selectAllBtn.addEventListener('click', selectAllExams);
   ui.deleteSelectedBtn.addEventListener('click', deleteSelectedExams);
-  ui.historyList.addEventListener('click', (event) => {
-    const button = event.target.closest('button');
-    if (!button) return;
-    const index = Number(button.dataset.index);
-    if (button.dataset.action === 'start') loadFromHistory(index);
-    if (button.dataset.action === 'rename') renameHistory(index);
-  });
+  ui.historyList.addEventListener('click', onLibraryClick);
 
   ui.backToUpload.addEventListener('click', () => showScreen('upload'));
   ui.modeStudy.addEventListener('click', () => { mode = 'study'; startExam(); });
@@ -252,7 +306,11 @@ function rememberBank(name, parsed, notes = []) {
     notes.push(error.path ? `${error.path}: ${error.message}` : error.message);
   });
   if (!parsed.questions.length) return false;
-  repository.save(name, parsed.questions);
+  const saved = repository.saveTest(name, parsed.questions, ui.importFolder.value || null);
+  if (!saved.ok) {
+    notes.push(saved.error === 'missing' ? 'La carpeta de destino ya no existe' : 'No se pudo guardar el banco');
+    return false;
+  }
   return true;
 }
 
@@ -414,7 +472,7 @@ function finishExam() {
   if (result.scoreOutOf10 >= 8) ui.scoreMessage.textContent = '¡Rendimiento Sobresaliente! 🎉';
   else if (result.scoreOutOf10 >= 5) ui.scoreMessage.textContent = 'Aprobado — ¡buen trabajo!';
   else ui.scoreMessage.textContent = 'Suspenso — Sigue practicando 💪';
-  repository.updateScore(currentExamName, result.scoreLabel);
+  if (currentExamId) repository.updateScore(currentExamId, result.scoreLabel);
 
   const circumference = 2 * Math.PI * 52;
   showScreen('loading');
@@ -473,16 +531,181 @@ function showToast(message) {
 }
 
 function renderHistory() {
-  const history = repository.list();
-  renderHistoryList(ui.historyList, history);
+  let view = repository.view(currentFolderId);
+  if (!view.ok) {
+    currentFolderId = null;
+    view = repository.view(null);
+  }
+  renderLibrary(ui.historyList, view);
+  fillSelect(ui.importFolder, repository.listFolders(), 'Sin clasificar');
+  ui.librarySort.value = view.sort;
   ui.historyList.querySelectorAll('.repo-checkbox').forEach((box) => {
     box.addEventListener('change', updateDeleteBtnVisibility);
   });
-  const empty = history.length === 0;
+  const empty = view.tests.length === 0;
   ui.selectAllBtn.classList.toggle('hidden', empty);
   if (empty) ui.deleteSelectedBtn.classList.add('hidden');
   else updateDeleteBtnVisibility();
   renderMath(ui.historyList);
+}
+
+function fillSelect(select, folders, emptyLabel, selected = select.value) {
+  select.replaceChildren();
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = emptyLabel;
+  select.append(empty);
+  for (const folder of folders) {
+    const option = document.createElement('option');
+    option.value = folder.id;
+    option.textContent = folder.path;
+    select.append(option);
+  }
+  select.value = [...select.options].some((option) => option.value === selected) ? selected : '';
+}
+
+function countLabel(amount, singular, plural) {
+  return `${amount} ${amount === 1 ? singular : plural}`;
+}
+
+function libraryFailure(error) {
+  if (error === 'cycle') return 'No se puede mover una carpeta dentro de sí misma';
+  if (error === 'empty-name') return 'El nombre no puede estar vacío';
+  if (error === 'unsupported-version') return 'Esta biblioteca no se puede modificar';
+  return 'No se pudo completar la acción';
+}
+
+function openLibraryDialog(options) {
+  libraryDialogAction = options.onConfirm;
+  ui.libraryDialogTitle.textContent = options.title;
+  ui.libraryDialogConfirm.textContent = options.confirmLabel;
+  ui.libraryDialogError.textContent = '';
+  ui.libraryNameField.classList.toggle('hidden', !options.showName);
+  ui.libraryDestField.classList.toggle('hidden', !options.showDest);
+  ui.libraryNameInput.value = options.name || '';
+  if (options.showDest) {
+    fillSelect(ui.libraryDestSelect, options.destinations || [], options.emptyLabel, '');
+  }
+  ui.libraryDialog.returnValue = '';
+  ui.libraryDialog.showModal();
+  if (options.showName) ui.libraryNameInput.focus();
+  else ui.libraryDestSelect.focus();
+}
+
+function openNewFolderDialog() {
+  openLibraryDialog({
+    title: 'Nueva carpeta',
+    confirmLabel: 'Crear',
+    showName: true,
+    showDest: false,
+    onConfirm: ({ name }) => {
+      const result = repository.createFolder(currentFolderId, name);
+      if (!result.ok) {
+        showToast(libraryFailure(result.error));
+        return;
+      }
+      renderHistory();
+      showToast('Carpeta creada');
+    }
+  });
+}
+
+function folderMoveDestinations(id) {
+  const blocked = new Set(repository.descendantFolderIds(id));
+  return repository.listFolders().filter((folder) => !blocked.has(folder.id));
+}
+
+function onLibraryClick(event) {
+  const button = event.target.closest('button');
+  if (!button || button.disabled) return;
+  const id = button.dataset.id || null;
+  if (button.dataset.action === 'open-folder') {
+    currentFolderId = id;
+    renderHistory();
+    return;
+  }
+  if (button.dataset.action === 'start') {
+    loadFromHistory(id);
+    return;
+  }
+  if (button.dataset.action === 'rename-test') {
+    renameHistory(id);
+    return;
+  }
+  if (button.dataset.action === 'rename-folder') {
+    const folder = repository.listFolders().find((item) => item.id === id);
+    if (!folder) return;
+    openLibraryDialog({
+      title: 'Renombrar carpeta',
+      confirmLabel: 'Guardar',
+      showName: true,
+      showDest: false,
+      name: folder.name,
+      onConfirm: ({ name }) => {
+        const result = repository.renameFolder(id, name);
+        if (!result.ok) {
+          showToast(libraryFailure(result.error));
+          return;
+        }
+        renderHistory();
+        showToast('Nombre actualizado');
+      }
+    });
+    return;
+  }
+  if (button.dataset.action === 'move-folder') {
+    openLibraryDialog({
+      title: 'Mover carpeta',
+      confirmLabel: 'Mover',
+      showName: false,
+      showDest: true,
+      emptyLabel: 'Repositorio',
+      destinations: folderMoveDestinations(id),
+      onConfirm: ({ destination }) => {
+        const result = repository.moveFolder(id, destination);
+        if (!result.ok) {
+          showToast(libraryFailure(result.error));
+          return;
+        }
+        renderHistory();
+        showToast('Carpeta movida');
+      }
+    });
+    return;
+  }
+  if (button.dataset.action === 'move-test') {
+    openLibraryDialog({
+      title: 'Mover test',
+      confirmLabel: 'Mover',
+      showName: false,
+      showDest: true,
+      emptyLabel: 'Sin clasificar',
+      destinations: repository.listFolders(),
+      onConfirm: ({ destination }) => {
+        const result = repository.moveTest(id, destination);
+        if (!result.ok) {
+          showToast(libraryFailure(result.error));
+          return;
+        }
+        renderHistory();
+        showToast('Test movido');
+      }
+    });
+    return;
+  }
+  if (button.dataset.action === 'move-up' || button.dataset.action === 'move-down') {
+    repository.moveInOrder(button.dataset.kind, id, button.dataset.action === 'move-up' ? -1 : 1);
+    renderHistory();
+    return;
+  }
+  if (button.dataset.action === 'delete-folder') {
+    const preview = repository.removalPreview(id);
+    if (!preview.ok) return;
+    pendingDelete = { kind: 'folder', id };
+    ui.deleteDialogText.textContent = `Se eliminarán ${countLabel(preview.folders, 'carpeta', 'carpetas')} y ${countLabel(preview.tests, 'test', 'tests')}. Esta acción no se puede deshacer.`;
+    ui.deleteDialog.returnValue = '';
+    ui.deleteDialog.showModal();
+  }
 }
 
 function updateDeleteBtnVisibility() {
@@ -500,27 +723,27 @@ function selectAllExams() {
 function deleteSelectedExams() {
   const selected = [...ui.historyList.querySelectorAll('.repo-checkbox:checked')];
   if (!selected.length) return;
-  if (!confirm(`¿Seguro que deseas borrar ${selected.length} exámenes de tu Repositorio?`)) return;
-  repository.remove(selected.map((box) => Number(box.dataset.index)));
-  renderHistory();
-  showToast('Exámenes borrados');
+  pendingDelete = { kind: 'tests', ids: selected.map((box) => box.dataset.id) };
+  ui.deleteDialogText.textContent = `¿Seguro que deseas borrar ${selected.length} exámenes de tu Repositorio? Esta acción no se puede deshacer.`;
+  ui.deleteDialog.returnValue = '';
+  ui.deleteDialog.showModal();
 }
 
-function loadFromHistory(index) {
-  const item = repository.list()[index];
+function loadFromHistory(id) {
+  const item = repository.getTest(id);
   if (!item) return;
-  currentExamName = item.name;
+  currentExamId = id;
   questions = item.questions.map(coerceStoredQuestion);
   ui.questionCountLabel.textContent = `${questions.length} preguntas pre-cargadas`;
   showScreen('mode');
 }
 
-function renameHistory(index) {
-  const item = repository.list()[index];
+function renameHistory(id) {
+  const item = repository.getTest(id);
   if (!item) return;
   const newName = prompt('Introduce un nuevo nombre para este banco de preguntas:', item.name);
   if (!newName || !newName.trim()) return;
-  repository.rename(index, newName);
+  repository.renameTest(id, newName);
   renderHistory();
   showToast('Nombre actualizado');
 }
@@ -541,6 +764,7 @@ function resetApp() {
   isReviewing = false;
   isAnswerChecked = false;
   currentIndex = 0;
+  currentExamId = '';
   ui.fileInput.value = '';
   ui.pasteInput.value = '';
   ui.loadPasteBtn.disabled = true;

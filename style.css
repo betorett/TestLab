@@ -301,7 +301,21 @@ textarea { min-height: 6rem; resize: vertical; }
 .history-item:hover { border-color: var(--border-hover); background: var(--bg-element); }
 .history-title { font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
 .history-meta { font-size: 0.85rem; color: var(--text-secondary); display: flex; justify-content: space-between; }
-.history-actions { display: flex; gap: 8px; margin-top: 12px; }
+.history-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.library-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
+.library-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 140px; }
+.library-field label { font-size: 0.85rem; color: var(--text-secondary); }
+.library-field select, .library-field input {
+    width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg-element); color: var(--text-primary); font: inherit;
+}
+.library-breadcrumbs { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0 0 12px; }
+.library-breadcrumbs li { display: flex; align-items: center; gap: 6px; }
+.library-breadcrumbs li + li::before { content: "/"; color: var(--text-tertiary); }
+.library-group { font-size: 0.95rem; margin: 4px 0 8px; }
+.library-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+dialog:modal { overscroll-behavior: contain; }
+dialog::backdrop { overscroll-behavior: contain; }
 .repo-checkbox { accent-color: var(--accent); transform: scale(1.1); }
 
 /* ===== MODAL ===== */

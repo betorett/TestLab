@@ -157,28 +157,23 @@ Al pegar texto, si empieza por `{` se trata como JSON. Un archivo `.json` siempr
 
 ### Prompt para una IA
 
-```text
-Genera solo un JSON TestLab versión 1, sin markdown.
-Usa "$schema": "../schema/testlab-bank-v1.schema.json" y "schemaVersion": 1.
-Cada pregunta tiene type, prompt y un único bloque de solución según el tipo:
-SINGLE y MULTIPLE con choices de id estable (A, B, C) y answer;
-TRUE_FALSE con answer boolean;
-FILL_BLANK con ___ en el enunciado y blanks como array de variantes;
-NUMERIC con answer.value numérico, answer.tolerance >= 0 y unit opcional, sin convertir unidades;
-MATCHING con pairs [{left, right}] sin repetir extremos;
-ORDERING con items en el orden correcto;
-SHORT_ANSWER con modelAnswer.
-No uses IMAGE_BASED. Si hace falta una figura, añade image.src (https o ruta relativa) e image.alt a un tipo normal.
-No añadas claves que no estén en el esquema. No dejes preguntas vacías ni opciones de menos.
-Antes de entregarlo, valida el archivo con: npm run validate:examples
-o, para otro archivo, el mismo Ajv contra schema/testlab-bank-v1.schema.json.
-```
+El texto listo para pegar como instrucción de sistema está en `prompts/system-prompt-json-v1.md`. El botón «Ver Prompt de IA» copia ese mismo texto: la página lo carga desde `src/ai-prompt.js`, sin `fetch`, así que funciona en `file://` y en el servidor estático. Pide solo JSON v1, los ocho tipos y prohíbe `IMAGE_BASED`.
+
+Eso no garantiza que el modelo devuelva un documento válido. Hay que seguir validando con `npm run validate:examples` o con Ajv contra `schema/testlab-bank-v1.schema.json`. `"$schema": "../schema/testlab-bank-v1.schema.json"` es una ruta del repositorio, no una URL pública.
 
 No hay exportador CSV→JSON. El modelo interno es el mismo, pero la migración queda fuera de este cambio.
 
-## Historial
+## Biblioteca
 
-`localStorage` (`testlab-history`) guarda el banco y la última nota, no la sesión a medias. Una pregunta antigua `{ text, type, options, correct }` se sigue abriendo y corrigiendo. Leer el repositorio no reescribe ese JSON. Los bancos nuevos se guardan ya en el modelo interno (`prompt`, `type`, `image`, `body`).
+El Repositorio es una biblioteca de carpetas, sin límite de niveles y sin asignaturas ni etiquetas. En cada nivel se ven sus subcarpetas y, debajo, sus tests. La ruta son migas de pan. «Sin clasificar» no es una carpeta: es la raíz para los tests que no están en ninguna.
+
+`testlab-history` sigue guardando los bancos y la última nota, no la sesión a medias. Una pregunta antigua `{ text, type, options, correct }` se abre y se corrige igual. Leer no reescribe ese JSON ni crea el índice.
+
+`testlab-library` (version 1) guarda las carpetas, en qué carpeta está cada test y el orden manual. Solo aparece cuando se crea, mueve, ordena o borra algo. Un test nuevo lleva `id` (`t_` más un UUID) e `importedAt` en ISO. Un test antiguo sin `id` se identifica al vuelo como `legacy:<fnv1a>:<ocurrencia>` y ese id solo se escribe cuando una operación ya reescribe el historial. La nota se actualiza por ese id, así que dos tests con el mismo nombre no se pisan.
+
+La preferencia de orden es global (`testlab-library-sort`): manual, nombre A–Z, fecha de importación (la más reciente primero) o última nota (la más alta primero; sin nota, al final). El orden manual de cada carpeta se conserva al cambiar de criterio. Una fecha antigua `d/m/aaaa` solo se usa si el día es mayor que 12 y la fecha existe; `6/11/2026` se queda como desconocida y no se inventa un instante. Las carpetas no tienen nota: ordenarlas por nota no las reordena.
+
+Importar sin elegir carpeta deja el banco en Sin clasificar. Borrar una carpeta pide confirmación con el número de carpetas y de tests, y entonces borra la rama. No hay papelera.
 
 ## Limitaciones
 
@@ -188,6 +183,10 @@ No hay exportador CSV→JSON. El modelo interno es el mismo, pero la migración 
 - Una ruta relativa tiene que publicarse junto a la app. No viaja embebida dentro del CSV o del JSON.
 - SHORT_ANSWER enseña la respuesta modelo porque la nota es manual. No sirve como ítem ciego.
 - Las opciones SINGLE/MULTIPLE no se aleatorizan: no existía esa función y no se ha añadido. En emparejar y ordenar, el orden visual inicial no es la clave de corrección.
+- No hay drag and drop, papelera ni deshacer al borrar una carpeta o unos tests.
+- El criterio de orden es uno para toda la biblioteca, no uno distinto por carpeta.
+- Las fechas antiguas ambiguas de `toLocaleDateString()` no se reinterpretan.
+- El prompt de IA no vuelve válido el JSON por sí solo.
 
 ## Tecnologías
 

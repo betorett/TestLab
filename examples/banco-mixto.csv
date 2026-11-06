@@ -1,0 +1,10 @@
+"¿Qué capital está marcada; Madrid?";SINGLE;Lisboa;Madrid;París;B;IMG=examples/figura.svg;IMG_ALT=Marca violeta sobre un esquema
+¿Qué números son pares?;MULTIPLE;2;3;4;A|C
+El hielo flota en el agua líquida;TRUE_FALSE;V
+La capital de Francia es ___.;FILL_BLANK;París|Paris
+La ___ limita con ___.;FILL_BLANK;Francia||España
+Gravedad estándar;NUMERIC;9,81;0,05;m/s^2
+¿Cuántos lados tiene un triángulo?;NUMERIC;3;0
+Empareja cada capital;MATCHING;Madrid=>España|Roma=>Italia
+Orden del ciclo;ORDERING;Planificar|Ejecutar|Comprobar
+¿Qué es la inercia?;SHORT_ANSWER;Tendencia de un cuerpo a conservar su estado de movimiento

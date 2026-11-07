@@ -99,7 +99,7 @@ const ui = {
 };
 
 const SCREEN_TITLES = {
-  upload: 'TestLab — Exámenes interactivos',
+  upload: 'TestLab — Mis tests',
   mode: 'TestLab — Cómo estudiar',
   exam: 'TestLab — Examen',
   loading: 'TestLab — Calculando',
@@ -249,8 +249,11 @@ function copyAiPrompt() {
 }
 
 function showScreen(name) {
-  Object.values(screens).forEach((screen) => screen.classList.remove('active'));
-  screens[name].classList.add('active');
+  Object.entries(screens).forEach(([key, screen]) => {
+    const active = key === name;
+    screen.classList.toggle('active', active);
+    screen.toggleAttribute('hidden', !active);
+  });
   document.title = SCREEN_TITLES[name];
 }
 

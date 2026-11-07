@@ -1201,8 +1201,8 @@ dialog::backdrop {
 .exam-topbar {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding-bottom: 12px;
+    gap: 8px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
@@ -1218,9 +1218,9 @@ dialog::backdrop {
     gap: 8px;
 }
 .exam-badge {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 999px;
     background: var(--accent-subtle);
     color: var(--accent-bar);
@@ -1236,10 +1236,10 @@ dialog::backdrop {
 }
 .counter-text {
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--text-secondary);
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 999px;
     background: var(--bg-element);
     border: 1px solid var(--border);
@@ -1253,44 +1253,54 @@ progress.exam-progress,
     border: 0 solid;
     overflow: clip;
     width: 100%;
-    height: 8px;
-    background: var(--bg-element);
-    border-radius: 999px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
     display: block;
 }
 #exam-progress::-webkit-progress-bar {
     background: transparent;
-    border-radius: 999px;
+    border-radius: 2px;
 }
 #exam-progress::-webkit-progress-value {
     background: var(--accent-bar);
-    border-radius: 999px;
+    border-radius: 2px;
     transition: width 0.25s ease;
 }
 #exam-progress::-moz-progress-bar {
     background: var(--accent-bar);
-    border-radius: 999px;
+    border-radius: 2px;
 }
 
-/* Interactive Question Map */
+/* Interactive Question Map (Lightweight, No Visible Scrollbar) */
 .question-map {
     display: flex;
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: 5px;
     overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: thin;
+    padding: 2px 0 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+    .question-map {
+        scroll-behavior: auto;
+    }
+}
+.question-map::-webkit-scrollbar {
+    display: none;
 }
 .question-pill {
-    min-width: 32px;
-    height: 30px;
-    padding: 0 8px;
+    min-width: 28px;
+    height: 26px;
+    padding: 0 6px;
     border-radius: var(--radius-xs);
     border: 1px solid var(--border);
-    background: var(--bg-raised);
+    background: var(--bg-surface);
     color: var(--text-tertiary);
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
     flex-shrink: 0;
@@ -1301,7 +1311,7 @@ progress.exam-progress,
     color: var(--text-primary);
 }
 .question-pill:disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: default;
 }
 .question-pill.pill-answered {
@@ -1321,8 +1331,12 @@ progress.exam-progress,
 }
 .question-pill.pill-current {
     border-color: var(--accent-bar);
-    box-shadow: inset 0 0 0 1px var(--accent-bar);
-    color: var(--text-primary);
+    background: var(--accent-subtle);
+    color: var(--accent-bar);
+    box-shadow: 0 0 0 1px var(--accent-bar);
+}
+[data-theme="light"] .question-pill.pill-current {
+    color: var(--accent);
 }
 
 /* Question Area & Question Types */
@@ -1592,24 +1606,35 @@ textarea {
     flex-direction: column;
     gap: 10px;
 }
-.numeric-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-}
-@media (min-width: 520px) {
-    .numeric-grid {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
-}
 .numeric-col {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    max-width: 320px;
 }
-.numeric-col input {
+.numeric-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.numeric-input-wrapper input {
     width: 100%;
     font-family: var(--font-mono);
+    padding-inline-end: 4.5rem;
+}
+.numeric-unit-badge {
+    position: absolute;
+    inset-inline-end: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--border);
+    pointer-events: none;
 }
 
 .matching {
@@ -1662,15 +1687,40 @@ textarea {
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
     background: var(--bg-raised);
+    transition: background-color var(--transition), border-color var(--transition), opacity var(--transition);
+}
+.ordering-item[draggable="true"] {
+    cursor: grab;
+}
+.ordering-item.is-dragging {
+    opacity: 0.35;
+    cursor: grabbing;
+}
+.ordering-item.drag-over {
+    border-color: var(--accent-bar);
+    background: var(--accent-subtle);
+}
+.ordering-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    cursor: grab;
+    padding: 2px;
+    flex-shrink: 0;
+    user-select: none;
+}
+.ordering-drag-handle:hover {
+    color: var(--text-primary);
 }
 .ordering-index {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     border-radius: var(--radius-xs);
     background: var(--bg-element);
     color: var(--text-secondary);
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -1685,13 +1735,22 @@ textarea {
 }
 .ordering-controls {
     display: inline-flex;
-    gap: 6px;
+    gap: 4px;
     flex-shrink: 0;
 }
 .ordering-move-btn {
-    min-height: 40px;
-    padding: 6px 10px;
-    font-size: 0.85rem;
+    min-height: 34px;
+    width: 34px;
+    padding: 0;
+    font-size: 1.05rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xs);
+}
+.ordering-arrow {
+    display: inline-block;
+    line-height: 1;
 }
 .ordering-confirm-btn {
     width: 100%;

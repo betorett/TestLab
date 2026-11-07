@@ -40,7 +40,6 @@ test('JSON bank walks all eight types, keyboard controls, and an import error', 
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
   await page.getByLabel('Valor', { exact: true }).fill('9,81');
-  await page.getByLabel(/Unidad/).fill('m/s²');
   await page.getByRole('button', { name: 'Comprobar', exact: true }).click();
   await expect(page.locator('.answer-status')).toHaveText('Respuesta correcta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
@@ -62,8 +61,8 @@ test('JSON bank walks all eight types, keyboard controls, and an import error', 
   await expect(page.locator('.answer-status')).toHaveText('Respuesta incorrecta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
-  await expect(page.getByText('Tendencia de un cuerpo a conservar su estado de movimiento')).toBeVisible();
   await page.getByLabel('Tu respuesta').fill('una respuesta distinta del modelo');
+  await expect(page.getByText('Tendencia de un cuerpo a conservar su estado de movimiento')).toBeVisible();
   await expect(page.locator('.answer-status')).toContainText('Pendiente de autoevaluación');
   await page.screenshot({ path: 'test-results/testlab-short-answer.png', fullPage: true });
   await page.getByRole('button', { name: 'La he fallado' }).click();

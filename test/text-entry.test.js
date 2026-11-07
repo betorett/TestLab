@@ -91,20 +91,14 @@ test('second blank keeps focus, caret and the other blank while typing', () => {
   assert.equal(session.root.querySelector('#q0-blank-0').selectionStart, 'Francia'.length);
 });
 
-test('numeric value and unit keep focus, caret and each other', () => {
+test('numeric value keeps focus and caret while typing, and unit is displayed statically', () => {
   const session = mount(question('NUMERIC', {
     prompt: 'Gravedad',
     body: { value: 9.81, tolerance: 0.05, unit: 'm/s^2' }
   }), { value: '', unit: '' });
 
-  placeCaret(session, '#q0-unit', 0);
-  type(session, 'm/s');
-  placeCaret(session, '#q0-unit', 1);
-  type(session, 'X');
-  const unit = session.root.querySelector('#q0-unit');
-  assert.equal(session.window.document.activeElement, unit);
-  assert.equal(unit.value, 'mX/s');
-  assert.equal(unit.selectionStart, 2);
+  assert.equal(session.root.querySelector('.numeric-unit-badge').textContent, 'm/s^2');
+  assert.equal(session.root.querySelector('#q0-unit'), null);
 
   placeCaret(session, '#q0-value', 0);
   type(session, '9,81');
@@ -115,8 +109,7 @@ test('numeric value and unit keep focus, caret and each other', () => {
   assert.equal(value.value, '9Q,81');
   assert.equal(value.selectionStart, 2);
   assert.equal(value.selectionEnd, 2);
-  assert.equal(session.root.querySelector('#q0-unit').value, 'mX/s');
-  assert.deepEqual(session.answer, { value: '9Q,81', unit: 'mX/s' });
+  assert.deepEqual(session.answer, { value: '9Q,81', unit: 'm/s^2' });
 });
 
 test('short answer keeps focus and a caret inside the existing text', () => {

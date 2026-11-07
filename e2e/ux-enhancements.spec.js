@@ -127,3 +127,73 @@ test('results screen displays instant results and breakdown items that open revi
   await expect(page.locator('#exam-mode-badge')).toHaveText('Revisión');
   await expect(page.getByText('2 / 3')).toBeVisible();
 });
+
+test('short answer hides model answer until answered, numeric omits unit input, and ordering has arrows', async ({ page }) => {
+  const customBank = JSON.stringify({
+    schemaVersion: 1,
+    title: 'Banco Mejoras Interfaz',
+    questions: [
+      {
+        type: 'SHORT_ANSWER',
+        prompt: '¿Qué es un closure?',
+        modelAnswer: 'Función con acceso al ámbito de su función externa.'
+      },
+      {
+        type: 'NUMERIC',
+        prompt: 'Velocidad del sonido en m/s a 20°C',
+        answer: { value: 343, tolerance: 2, unit: 'm/s' }
+      },
+      {
+        type: 'ORDERING',
+        prompt: 'Ordena la secuencia',
+        items: ['Primero', 'Segundo', 'Tercero']
+      }
+    ]
+  });
+
+  await page.goto('/');
+  await page.locator('#empty-import').click();
+  await page.locator('#paste-input').fill(customBank);
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
+  await page.getByRole('button', { name: 'Estudiar Banco Mejoras Interfaz' }).click();
+
+  // 1. SHORT_ANSWER: model answer is hidden before user types
+  const area = page.getByLabel('Tu respuesta');
+  await expect(page.getByText('Función con acceso al ámbito')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeHidden();
+
+  // Type answer -> model answer and verdict buttons become visible
+  await area.click();
+  await area.fill('Una función que recuerda su léxico');
+  await expect(page.getByText('Función con acceso al ámbito')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeVisible();
+  await page.getByRole('button', { name: 'La he acertado' }).click();
+
+  // Advance to NUMERIC
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  await expect(page.getByText('2 / 3')).toBeVisible();
+
+  // 2. NUMERIC: only value input exists, unit is a static badge
+  const numInput = page.getByLabel('Valor');
+  await expect(numInput).toBeVisible();
+  await expect(page.locator('.numeric-unit-badge')).toHaveText('m/s');
+  // No editable unit input exists
+  await expect(page.getByLabel(/^Unidad/)).toHaveCount(0);
+
+  await numInput.fill('343');
+  await page.getByRole('button', { name: 'Comprobar' }).click();
+  await expect(page.locator('.answer-status')).toHaveText('Respuesta correcta');
+
+  // Advance to ORDERING
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  await expect(page.getByText('3 / 3')).toBeVisible();
+
+  // 3. ORDERING: move buttons display arrows and have aria-label, and items are draggable
+  const items = page.locator('.ordering-item');
+  await expect(items).toHaveCount(3);
+  await expect(items.first()).toHaveAttribute('draggable', 'true');
+  const upButtons = page.getByRole('button', { name: /^Subir / });
+  const downButtons = page.getByRole('button', { name: /^Bajar / });
+  await expect(upButtons.first()).toContainText('↑');
+  await expect(downButtons.first()).toContainText('↓');
+});

@@ -611,6 +611,13 @@ function renderQuestionMap() {
     });
     ui.questionMap.append(pill);
   });
+  const currentPill = ui.questionMap.querySelector('.pill-current');
+  const prefersReduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  currentPill?.scrollIntoView?.({
+    inline: 'center',
+    block: 'nearest',
+    behavior: prefersReduced ? 'auto' : 'smooth'
+  });
 }
 
 function renderCurrent() {

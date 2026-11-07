@@ -1,5 +1,5 @@
 import { gradeQuestion } from './grade.js';
-import { normalizeAnswerText, normalizeUnit } from './text.js';
+import { normalizeAnswerText } from './text.js';
 
 const TEXT_TYPES = new Set(['FILL_BLANK', 'NUMERIC', 'SHORT_ANSWER']);
 
@@ -72,10 +72,58 @@ function syncShortVerdict(container, answer) {
   incorrect.setAttribute('aria-pressed', String(verdict === 'incorrect'));
 }
 
+function syncShortSection(container, question, answer, ctx) {
+  const hasText = Boolean(answer?.text && answer.text.trim() !== '');
+  const model = container.querySelector('.model-answer');
+  const actions = container.querySelector('.short-actions');
+  const doc = container.ownerDocument;
+
+  if (hasText && !model) {
+    const newModel = el(doc, 'p', 'model-answer');
+    const modelLabel = el(doc, 'span', 'model-label', 'Respuesta modelo: ');
+    newModel.append(modelLabel, doc.createTextNode(question.body.modelAnswer));
+
+    const correct = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he acertado');
+    correct.type = 'button';
+    correct.disabled = Boolean(ctx.reveal);
+    correct.setAttribute('aria-pressed', String(answer.verdict === 'correct'));
+
+    const incorrect = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he fallado');
+    incorrect.type = 'button';
+    incorrect.disabled = Boolean(ctx.reveal);
+    incorrect.setAttribute('aria-pressed', String(answer.verdict === 'incorrect'));
+
+    const area = container.querySelector('textarea');
+    const choose = (verdict) => {
+      if (ctx.reveal) return;
+      ctx.onAnswer({ text: area?.value || '', verdict });
+    };
+    correct.addEventListener('click', () => choose('correct'));
+    incorrect.addEventListener('click', () => choose('incorrect'));
+    if (answer.verdict === 'correct') correct.classList.add('is-correct');
+    if (answer.verdict === 'incorrect') incorrect.classList.add('is-incorrect');
+
+    const newActions = el(doc, 'div', 'short-actions');
+    newActions.append(correct, incorrect);
+    const statusNode = container.querySelector('.answer-status');
+    if (statusNode) {
+      container.insertBefore(newModel, statusNode);
+      container.insertBefore(newActions, statusNode);
+    } else {
+      container.append(newModel, newActions);
+    }
+  } else if (!hasText && model && !ctx.reveal && !answer?.verdict) {
+    model.remove();
+    actions?.remove();
+  } else if (actions) {
+    syncShortVerdict(container, answer);
+  }
+}
+
 export function renderQuestion(container, question, answer, ctx) {
   if (canPreserveTextEntry(container, question, ctx)) {
+    if (question.type === 'SHORT_ANSWER') syncShortSection(container, question, answer, ctx);
     syncStatus(container, question, answer, ctx);
-    if (question.type === 'SHORT_ANSWER') syncShortVerdict(container, answer);
     return { preserved: true };
   }
 
@@ -293,49 +341,38 @@ function renderNumeric(container, question, answer, ctx) {
   value.spellcheck = false;
   value.placeholder = 'Ej. 9,81';
   value.value = current.value || '';
-  const hint = el(doc, 'p', 'meta numeric-hint', `Tolerancia absoluta ±${question.body.tolerance}. Usa coma o punto decimal.`);
+
+  const unitText = question.body.unit ? ` en ${question.body.unit}` : '';
+  const hint = el(doc, 'p', 'meta numeric-hint', `Tolerancia absoluta ±${question.body.tolerance}${unitText}. Usa coma o punto decimal.`);
   hint.id = `${ctx.idPrefix}-hint`;
   value.setAttribute('aria-describedby', hint.id);
-  let unit = null;
+
   const publishNumeric = () => ctx.onAnswer({
     value: value.value,
-    unit: unit ? unit.value : ''
+    unit: question.body.unit || ''
   });
   value.addEventListener('input', publishNumeric);
 
   const group = el(doc, 'div', 'numeric-fields');
-  const grid = el(doc, 'div', 'numeric-grid');
-  const valCol = el(doc, 'div', 'numeric-col');
-  valCol.append(valueLabel, value);
-  grid.append(valCol);
+  const inputWrapper = el(doc, 'div', 'numeric-input-wrapper');
+  inputWrapper.append(value);
 
   if (question.body.unit) {
-    const unitId = `${ctx.idPrefix}-unit`;
-    const unitLabel = el(doc, 'label', 'field-label', `Unidad (${question.body.unit})`);
-    unitLabel.htmlFor = unitId;
-    unit = doc.createElement('input');
-    unit.type = 'text';
-    unit.id = unitId;
-    unit.autocomplete = 'off';
-    unit.spellcheck = false;
-    unit.placeholder = question.body.unit;
-    unit.value = current.unit || '';
-    unit.addEventListener('input', publishNumeric);
-    const unitCol = el(doc, 'div', 'numeric-col');
-    unitCol.append(unitLabel, unit);
-    grid.append(unitCol);
-    if (ctx.reveal) {
-      const matches = normalizeUnit(unit.value) === normalizeUnit(question.body.unit);
-      unit.disabled = true;
-      unit.classList.add(matches ? 'is-correct' : 'is-incorrect');
-    }
+    const unitBadge = el(doc, 'span', 'numeric-unit-badge', question.body.unit);
+    unitBadge.setAttribute('aria-hidden', 'true');
+    inputWrapper.append(unitBadge);
   }
+
+  const valCol = el(doc, 'div', 'numeric-col');
+  valCol.append(valueLabel, inputWrapper);
+  group.append(valCol, hint);
+
   if (ctx.reveal) {
     value.disabled = true;
-    const isOk = gradeQuestion(question, { value: value.value, unit: current.unit || '' }) === 'correct';
+    const isOk = gradeQuestion(question, { value: value.value, unit: question.body.unit || '' }) === 'correct';
     value.classList.add(isOk ? 'is-correct' : 'is-incorrect');
   }
-  group.append(grid, hint);
+
   if (ctx.reveal && gradeQuestion(question, current) !== 'correct') {
     const unitSuffix = question.body.unit ? ` ${question.body.unit}` : '';
     group.append(el(doc, 'p', 'model-answer', `Valor esperado: ${question.body.value} (±${question.body.tolerance})${unitSuffix}`));
@@ -395,21 +432,69 @@ function renderOrdering(container, question, answer, ctx) {
     if (ctx.reveal) {
       itemNode.classList.add(question.body.items[index] === item ? 'is-correct' : 'is-incorrect');
     }
+
+    if (!ctx.reveal) {
+      itemNode.setAttribute('draggable', 'true');
+      const dragHandle = el(doc, 'span', 'ordering-drag-handle');
+      dragHandle.setAttribute('aria-hidden', 'true');
+      dragHandle.title = 'Arrastra para reordenar';
+      dragHandle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>';
+      itemNode.append(dragHandle);
+
+      itemNode.addEventListener('dragstart', (e) => {
+        if (e.target.closest('button')) {
+          e.preventDefault();
+          return;
+        }
+        e.dataTransfer.setData('text/plain', String(index));
+        e.dataTransfer.effectAllowed = 'move';
+        itemNode.classList.add('is-dragging');
+      });
+
+      itemNode.addEventListener('dragend', () => {
+        itemNode.classList.remove('is-dragging');
+        list.querySelectorAll('.ordering-item').forEach((node) => node.classList.remove('drag-over'));
+      });
+
+      itemNode.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        itemNode.classList.add('drag-over');
+      });
+
+      itemNode.addEventListener('dragleave', () => {
+        itemNode.classList.remove('drag-over');
+      });
+
+      itemNode.addEventListener('drop', (e) => {
+        e.preventDefault();
+        itemNode.classList.remove('drag-over');
+        const fromIndex = Number.parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (Number.isNaN(fromIndex) || fromIndex === index || fromIndex < 0 || fromIndex >= state.order.length) return;
+        ctx.onAnswer({ order: move(state.order, fromIndex, index), confirmed: true });
+      });
+    }
+
     const stepBadge = el(doc, 'span', 'ordering-index', String(index + 1));
     stepBadge.setAttribute('aria-hidden', 'true');
     itemNode.append(stepBadge, el(doc, 'span', 'ordering-label', item));
 
     const controls = el(doc, 'div', 'ordering-controls');
-    const up = el(doc, 'button', 'nav-btn ordering-move-btn', 'Subir');
+    const up = el(doc, 'button', 'nav-btn ordering-move-btn', '');
     up.type = 'button';
     up.disabled = index === 0 || Boolean(ctx.reveal);
     up.setAttribute('aria-label', `Subir ${item}`);
-    const down = el(doc, 'button', 'nav-btn ordering-move-btn', 'Bajar');
+    up.innerHTML = '<span class="ordering-arrow" aria-hidden="true">↑</span><span class="visually-hidden">Subir</span>';
+
+    const down = el(doc, 'button', 'nav-btn ordering-move-btn', '');
     down.type = 'button';
     down.disabled = index === state.order.length - 1 || Boolean(ctx.reveal);
     down.setAttribute('aria-label', `Bajar ${item}`);
+    down.innerHTML = '<span class="ordering-arrow" aria-hidden="true">↓</span><span class="visually-hidden">Bajar</span>';
+
     up.addEventListener('click', () => ctx.onAnswer({ order: move(state.order, index, index - 1), confirmed: true }));
     down.addEventListener('click', () => ctx.onAnswer({ order: move(state.order, index, index + 1), confirmed: true }));
+
     controls.append(up, down);
     itemNode.append(controls);
     list.append(itemNode);
@@ -445,28 +530,39 @@ function renderShort(container, question, answer, ctx) {
     }
     ctx.onAnswer({ text: area.value, verdict: null });
   });
-  const model = el(doc, 'p', 'model-answer');
-  const modelLabel = el(doc, 'span', 'model-label', 'Respuesta modelo: ');
-  model.append(modelLabel, doc.createTextNode(question.body.modelAnswer));
-  const correct = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he acertado');
-  correct.type = 'button';
-  correct.disabled = locked;
-  correct.setAttribute('aria-pressed', String(current.verdict === 'correct'));
-  const incorrect = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he fallado');
-  incorrect.type = 'button';
-  incorrect.disabled = locked;
-  incorrect.setAttribute('aria-pressed', String(current.verdict === 'incorrect'));
-  const choose = (verdict) => {
-    if (locked) return;
-    ctx.onAnswer({ text: area.value, verdict });
-  };
-  correct.addEventListener('click', () => choose('correct'));
-  incorrect.addEventListener('click', () => choose('incorrect'));
-  if (current.verdict === 'correct') correct.classList.add('is-correct');
-  if (current.verdict === 'incorrect') incorrect.classList.add('is-incorrect');
-  const actions = el(doc, 'div', 'short-actions');
-  actions.append(correct, incorrect);
-  container.append(label, area, model, actions);
+
+  container.append(label, area);
+
+  const hasAnswered = Boolean(current.text && current.text.trim() !== '') || Boolean(current.verdict) || Boolean(ctx.reveal);
+
+  if (hasAnswered) {
+    const model = el(doc, 'p', 'model-answer');
+    const modelLabel = el(doc, 'span', 'model-label', 'Respuesta modelo: ');
+    model.append(modelLabel, doc.createTextNode(question.body.modelAnswer));
+
+    const correct = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he acertado');
+    correct.type = 'button';
+    correct.disabled = locked;
+    correct.setAttribute('aria-pressed', String(current.verdict === 'correct'));
+
+    const incorrect = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he fallado');
+    incorrect.type = 'button';
+    incorrect.disabled = locked;
+    incorrect.setAttribute('aria-pressed', String(current.verdict === 'incorrect'));
+
+    const choose = (verdict) => {
+      if (locked) return;
+      ctx.onAnswer({ text: area.value, verdict });
+    };
+    correct.addEventListener('click', () => choose('correct'));
+    incorrect.addEventListener('click', () => choose('incorrect'));
+    if (current.verdict === 'correct') correct.classList.add('is-correct');
+    if (current.verdict === 'incorrect') incorrect.classList.add('is-incorrect');
+
+    const actions = el(doc, 'div', 'short-actions');
+    actions.append(correct, incorrect);
+    container.append(model, actions);
+  }
 }
 
 function move(items, from, to) {
@@ -479,12 +575,13 @@ function move(items, from, to) {
 function statusInfo(question, answer, ctx) {
   if (question.type === 'SHORT_ANSWER') {
     const text = String(answer?.text ?? '').trim();
+    if (!text && !ctx.reveal && !answer?.verdict) {
+      return { tone: '', text: '' };
+    }
     if (!text || (answer?.verdict !== 'correct' && answer?.verdict !== 'incorrect')) {
       return {
         tone: 'pending',
-        text: text
-          ? 'Pendiente de autoevaluación. No se puntúa automáticamente.'
-          : 'La respuesta corta no se corrige sola. Pendiente de autoevaluación hasta que escribas y decidas.'
+        text: 'Pendiente de autoevaluación. No se puntúa automáticamente.'
       };
     }
     return {

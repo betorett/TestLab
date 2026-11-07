@@ -120,7 +120,7 @@ test('study typing keeps focus, caret, earlier blanks, paste and grading', async
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
   const value = page.getByLabel('Valor', { exact: true });
-  const unit = page.getByLabel(/Unidad/);
+  await expect(page.locator('.numeric-unit-badge')).toHaveText('m/s^2');
   await value.click();
   await value.pressSequentially('9,81', { delay: 15 });
   await expect(value).toHaveValue('9,81');
@@ -128,31 +128,22 @@ test('study typing keeps focus, caret, earlier blanks, paste and grading', async
   await typeAt(value, 1, 1, '0');
   await expect(value).toHaveValue('90,81');
   await expectCaret(value, 2);
-
-  await unit.click();
-  await unit.pressSequentially('m/s^2', { delay: 15 });
-  await expect(unit).toHaveValue('m/s^2');
-  await expectCaret(unit, 'm/s^2'.length);
-  await expect(value).toHaveValue('90,81');
-  await typeAt(unit, 2, 2, 'X');
-  await expect(unit).toHaveValue('m/Xs^2');
-  await expect(value).toHaveValue('90,81');
   await expect(page.getByRole('button', { name: 'Comprobar', exact: true })).toBeEnabled();
 
   await value.fill('9,81');
-  await unit.fill('m/s^2');
   await page.getByRole('button', { name: 'Comprobar', exact: true }).click();
   await expect(page.locator('.answer-status')).toHaveText('Respuesta correcta');
   await expect(value).toBeDisabled();
-  await expect(unit).toBeDisabled();
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
   const area = page.getByLabel('Tu respuesta');
+  await expect(page.getByText('Tendencia a conservar el movimiento')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeHidden();
+  await area.click();
+  await area.pressSequentially('abcd', { delay: 15 });
   await expect(page.getByText('Tendencia a conservar el movimiento')).toBeVisible();
   await expect(page.getByRole('button', { name: 'La he acertado' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'La he fallado' })).toBeEnabled();
-  await area.click();
-  await area.pressSequentially('abcd', { delay: 15 });
   await expect(area).toHaveValue('abcd');
   await expectCaret(area, 4);
   await typeAt(area, 2, 2, 'XY');
@@ -176,7 +167,7 @@ test('study typing keeps focus, caret, earlier blanks, paste and grading', async
   await expect(page.locator('.answer-status')).toHaveText('Marcada como incorrecta');
   await page.getByRole('button', { name: 'Anterior' }).click();
   await expect(page.getByLabel('Valor', { exact: true })).toHaveValue('9,81');
-  await expect(page.getByLabel(/Unidad/)).toHaveValue('m/s^2');
+  await expect(page.locator('.numeric-unit-badge')).toHaveText('m/s^2');
   await expect(page.getByLabel('Valor', { exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Anterior' })).toBeHidden();
   await page.getByRole('button', { name: 'Comprobar', exact: true }).click();
@@ -203,14 +194,11 @@ test('exam typing keeps answers while moving between questions', async ({ page }
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
   const value = page.getByLabel('Valor', { exact: true });
-  const unit = page.getByLabel(/Unidad/);
-  await unit.click();
-  await unit.pressSequentially('m/s^2', { delay: 15 });
+  await expect(page.locator('.numeric-unit-badge')).toHaveText('m/s^2');
   await value.click();
   await value.pressSequentially('1234', { delay: 15 });
   await typeAt(value, 1, 3, 'X');
   await expect(value).toHaveValue('1X4');
-  await expect(unit).toHaveValue('m/s^2');
   await expectCaret(value, 2);
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
@@ -225,7 +213,7 @@ test('exam typing keeps answers while moving between questions', async ({ page }
 
   await page.getByRole('button', { name: 'Anterior' }).click();
   await expect(page.getByLabel('Valor', { exact: true })).toHaveValue('1X4');
-  await expect(page.getByLabel(/Unidad/)).toHaveValue('m/s^2');
+  await expect(page.locator('.numeric-unit-badge')).toHaveText('m/s^2');
   await expect(page.getByLabel('Valor', { exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Anterior' }).click();
   await expect(page.getByLabel('Hueco 1')).toHaveValue('Francia');

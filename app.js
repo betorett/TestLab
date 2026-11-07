@@ -209,7 +209,7 @@ function init() {
     const saved = rememberBank(name, parsed, notes) ? 1 : 0;
     ui.pasteInput.value = '';
     ui.loadPasteBtn.disabled = true;
-    if (saved > 0) ui.importDialog.close();
+    if (saved > 0 && ui.importDialog.open) ui.importDialog.close();
     renderHistory();
     showImportNotes(notes, saved);
   });
@@ -266,7 +266,7 @@ function handleMultipleFiles(fileList) {
     processed += 1;
     if (processed !== files.length) return;
     ui.fileInput.value = '';
-    if (saved > 0) ui.importDialog.close();
+    if (saved > 0 && ui.importDialog.open) ui.importDialog.close();
     renderHistory();
     showImportNotes(notes, saved);
   };

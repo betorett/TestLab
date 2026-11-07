@@ -26,7 +26,16 @@ export default [
     rules
   },
   {
-    files: ['test/**/*.js', 'e2e/**/*.js', 'scripts/**/*.js', 'playwright.config.js'],
+    files: ['e2e/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node, ...globals.browser }
+    },
+    rules
+  },
+  {
+    files: ['test/**/*.js', 'scripts/**/*.js', 'playwright.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

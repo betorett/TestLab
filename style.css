@@ -151,7 +151,6 @@ code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; backgr
     background: var(--bg-raised); color: var(--text-primary);
     font-family: var(--font); font-size: 16px; font-weight: 500;
     cursor: pointer; transition: all var(--transition);
-    white-space: nowrap;
     box-sizing: border-box;
 }
 .nav-btn:hover:not(:disabled) { border-color: var(--border-hover); background: var(--bg-element); }
@@ -267,10 +266,13 @@ textarea { min-height: 6rem; resize: vertical; }
 }
 .library-toolbar {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
     align-items: center;
     margin-bottom: 16px;
+}
+.library-toolbar .nav-btn {
+    min-width: 0;
 }
 .library-toolbar .library-field {
     grid-column: 1 / -1;

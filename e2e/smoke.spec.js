@@ -5,11 +5,13 @@ const jsonBank = fs.readFileSync(new URL('../examples/banco-mixto.json', import.
 
 test('JSON bank walks all eight types, keyboard controls, and an import error', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Pegar texto manualmente' }).click();
+  const opener = page.locator('#import-btn');
+  if (await opener.isVisible()) await opener.click();
+  else await page.locator('#empty-import').click();
   await page.locator('#paste-input').fill(jsonBank);
-  await page.getByRole('button', { name: 'Añadir al Repositorio' }).click();
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
   await expect(page.locator('#import-errors')).toBeEmpty();
-  await page.getByRole('button', { name: 'Empezar examen' }).click();
+  await page.getByRole('button', { name: 'Empezar Banco mixto' }).click();
   await page.getByRole('button', { name: /Modo Estudio/ }).click();
 
   await expect(page.locator('img.question-image')).toHaveAttribute('alt', 'Marca violeta sobre un esquema');
@@ -63,17 +65,19 @@ test('JSON bank walks all eight types, keyboard controls, and an import error', 
   await expect(page.getByText('Tendencia de un cuerpo a conservar su estado de movimiento')).toBeVisible();
   await page.getByLabel('Tu respuesta').fill('una respuesta distinta del modelo');
   await expect(page.locator('.answer-status')).toContainText('Pendiente de autoevaluación');
-  await page.screenshot({ path: '/opt/cursor/artifacts/testlab-short-answer.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/testlab-short-answer.png', fullPage: true });
   await page.getByRole('button', { name: 'La he fallado' }).click();
   await page.getByRole('button', { name: 'Finalizar' }).click();
   await expect(page.locator('#results-screen')).toHaveClass(/active/);
   await expect(page.locator('#score-detail')).not.toContainText('pendientes');
-  await page.screenshot({ path: '/opt/cursor/artifacts/testlab-results.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/testlab-results.png', fullPage: true });
 
   await page.locator('#restart-btn').click();
-  await page.getByRole('button', { name: 'Pegar texto manualmente' }).click();
+  const opener2 = page.locator('#import-btn');
+  if (await opener2.isVisible()) await opener2.click();
+  else await page.locator('#empty-import').click();
   await page.locator('#paste-input').fill('{"schemaVersion":2,"questions":[]}');
-  await page.getByRole('button', { name: 'Añadir al Repositorio' }).click();
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
   await expect(page.locator('#import-errors')).toContainText('schemaVersion');
 });
 
@@ -82,7 +86,7 @@ test('a legacy CSV file upload still creates a repository entry', async ({ page 
   await page.locator('#file-input').setInputFiles('sample_exam.csv');
   await expect(page.locator('#import-errors')).toBeEmpty();
   await expect(page.locator('#history-list')).toContainText('5 preguntas');
-  await page.getByRole('button', { name: 'Empezar examen' }).click();
+  await page.getByRole('button', { name: 'Empezar sample_exam' }).click();
   await page.getByRole('button', { name: /Modo Examen/ }).click();
   await page.locator('.option-btn', { hasText: 'Rojo' }).click();
   await expect(page.getByText('2 / 5')).toBeVisible();

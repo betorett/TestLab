@@ -65,7 +65,7 @@ export function createLibrary(storage, now = () => new Date(), ids = defaultIds(
       if (folderId != null) return { ok: false, error: 'missing' };
       return {
         ok: true,
-        breadcrumbs: [{ id: null, name: 'Repositorio' }],
+        breadcrumbs: [{ id: null, name: 'Mis tests' }],
         folders: [],
         tests: sortItems(identified.map(toTest), sort, 'test'),
         sort
@@ -616,7 +616,7 @@ function arrange(items, ids) {
 }
 
 function breadcrumbTrail(model, folderId) {
-  const root = { id: null, name: 'Repositorio' };
+  const root = { id: null, name: 'Mis tests' };
   if (folderId == null) return [root];
   const byId = indexFolders(model);
   const folder = byId.get(folderId);

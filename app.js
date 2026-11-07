@@ -662,7 +662,7 @@ function onLibraryClick(event) {
       confirmLabel: 'Mover',
       showName: false,
       showDest: true,
-      emptyLabel: 'Repositorio',
+      emptyLabel: 'Mis tests',
       destinations: folderMoveDestinations(id),
       onConfirm: ({ destination }) => {
         const result = repository.moveFolder(id, destination);

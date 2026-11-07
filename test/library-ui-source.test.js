@@ -34,3 +34,15 @@ test('home is the library and import lives in a dialog', () => {
   assert.match(app, /Añadido a Mis tests/);
   assert.match(app, /¿Seguro que deseas borrar \$\{countLabel\(selected\.length, 'test', 'tests'\)\}\?/);
 });
+
+test('settings and the prompt dialog name themselves', () => {
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="settings-modal"[^>]*aria-labelledby="settings-title"/);
+  assert.match(html, /id="settings-title">Ajustes</);
+  assert.match(html, /id="penalty-input"[^>]*autofocus/);
+  assert.match(html, /id="ai-prompt-modal"[^>]*aria-labelledby="prompt-title"/);
+  assert.match(html, /id="prompt-title">Prompt para IA</);
+  assert.match(html, /id="copy-prompt-btn"[^>]*autofocus/);
+  assert.doesNotMatch(html, /role="dialog"/);
+  assert.doesNotMatch(html, /aria-modal/);
+});

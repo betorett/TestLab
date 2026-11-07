@@ -38,9 +38,11 @@ const screens = {
 const ui = {
   dropZone: $('drop-zone'),
   fileInput: $('file-input'),
-  browseBtn: $('browse-btn'),
-  togglePasteBtn: $('toggle-paste-btn'),
-  pasteCollapse: $('paste-collapse'),
+  importDialog: $('import-dialog'),
+  importBtn: $('import-btn'),
+  chooseFilesBtn: $('choose-files-btn'),
+  closeImportDialog: $('close-import-dialog'),
+  libraryTitle: $('library-title'),
   pasteInput: $('paste-input'),
   loadPasteBtn: $('load-paste-btn'),
   selectAllBtn: $('select-all-btn'),
@@ -174,11 +176,11 @@ function init() {
     if (!inside) ui.aiModal.close();
   });
 
+  ui.importBtn.addEventListener('click', () => ui.importDialog.showModal());
+  ui.chooseFilesBtn.addEventListener('click', () => ui.fileInput.click());
+  ui.closeImportDialog.addEventListener('click', () => ui.importDialog.close());
+
   ui.dropZone.addEventListener('click', () => ui.fileInput.click());
-  ui.browseBtn.addEventListener('click', (event) => {
-    event.stopPropagation();
-    ui.fileInput.click();
-  });
   ui.fileInput.addEventListener('change', (event) => {
     if (event.target.files.length) handleMultipleFiles(event.target.files);
   });
@@ -195,9 +197,6 @@ function init() {
     if (event.dataTransfer.files.length) handleMultipleFiles(event.dataTransfer.files);
   });
 
-  ui.togglePasteBtn.addEventListener('click', () => {
-    ui.pasteCollapse.classList.toggle('hidden');
-  });
   ui.pasteInput.addEventListener('input', () => {
     ui.loadPasteBtn.disabled = ui.pasteInput.value.trim() === '';
   });
@@ -210,7 +209,7 @@ function init() {
     const saved = rememberBank(name, parsed, notes) ? 1 : 0;
     ui.pasteInput.value = '';
     ui.loadPasteBtn.disabled = true;
-    ui.pasteCollapse.classList.add('hidden');
+    if (saved > 0) ui.importDialog.close();
     renderHistory();
     showImportNotes(notes, saved);
   });
@@ -267,6 +266,7 @@ function handleMultipleFiles(fileList) {
     processed += 1;
     if (processed !== files.length) return;
     ui.fileInput.value = '';
+    if (saved > 0) ui.importDialog.close();
     renderHistory();
     showImportNotes(notes, saved);
   };
@@ -324,7 +324,7 @@ function showImportNotes(notes, saved) {
     line.textContent = note;
     ui.importErrors.append(line);
   });
-  if (saved > 0) showToast(notes.length ? 'Banco guardado con avisos' : 'Añadido al repositorio');
+  if (saved > 0) showToast(notes.length ? 'Banco guardado con avisos' : 'Añadido a Mis tests');
   else showToast(notes[0] || 'No se encontraron preguntas válidas');
 }
 
@@ -539,6 +539,11 @@ function renderHistory() {
     currentFolderId = null;
     view = repository.view(null);
   }
+  if (currentFolderId === null) {
+    ui.libraryTitle.setAttribute('aria-current', 'page');
+  } else {
+    ui.libraryTitle.removeAttribute('aria-current');
+  }
   renderLibrary(ui.historyList, view);
   fillSelect(ui.importFolder, repository.listFolders(), 'Sin clasificar');
   ui.librarySort.value = view.sort;
@@ -549,6 +554,16 @@ function renderHistory() {
   ui.selectAllBtn.classList.toggle('hidden', empty);
   if (empty) ui.deleteSelectedBtn.classList.add('hidden');
   else updateDeleteBtnVisibility();
+  ui.historyList.querySelector('#empty-import')?.addEventListener('click', () => ui.importDialog.showModal());
+  ui.historyList.querySelector('#empty-folder')?.addEventListener('click', openNewFolderDialog);
+  ui.historyList.querySelectorAll('details.library-menu').forEach((menu) => {
+    menu.addEventListener('toggle', () => {
+      if (!menu.open) return;
+      ui.historyList.querySelectorAll('details.library-menu[open]').forEach((other) => {
+        if (other !== menu) other.removeAttribute('open');
+      });
+    });
+  });
   renderMath(ui.historyList);
 }
 
@@ -727,7 +742,7 @@ function deleteSelectedExams() {
   const selected = [...ui.historyList.querySelectorAll('.repo-checkbox:checked')];
   if (!selected.length) return;
   pendingDelete = { kind: 'tests', ids: selected.map((box) => box.dataset.id) };
-  ui.deleteDialogText.textContent = `¿Seguro que deseas borrar ${selected.length} exámenes de tu Repositorio? Esta acción no se puede deshacer.`;
+  ui.deleteDialogText.textContent = `¿Seguro que deseas borrar ${countLabel(selected.length, 'test', 'tests')}? Esta acción no se puede deshacer.`;
   ui.deleteDialog.returnValue = '';
   ui.deleteDialog.showModal();
 }
@@ -771,7 +786,6 @@ function resetApp() {
   ui.fileInput.value = '';
   ui.pasteInput.value = '';
   ui.loadPasteBtn.disabled = true;
-  ui.pasteCollapse.classList.add('hidden');
   ui.scoreRing.style.strokeDasharray = '0 327';
   showScreen('upload');
   renderHistory();

@@ -2,8 +2,8 @@
 <html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TestLab — Exámenes Interactivos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+    <title>TestLab — Mis tests</title>
     <meta name="description" content="Sube un CSV y convierte tus preguntas en un examen interactivo con resolución de dudas por IA.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -20,102 +20,76 @@
     <!-- Ambient background -->
     <div class="ambient-glow"></div>
 
-    <!-- Header Actions -->
-    <div class="header-actions">
-        <button id="settings-btn" class="icon-toggle" title="Ajustes">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
-
-        <button id="theme-toggle" class="icon-toggle" title="Cambiar tema">
-            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
-    </div>
-
-    <!-- SCREEN: Upload -->
+    <!-- SCREEN: Upload / Mis tests -->
     <main id="upload-screen" class="screen active">
-        <div class="upload-layout">
-            <div class="brand">
-                <div class="brand-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-                        <polyline points="10 2 10 10 13 7 16 10 16 2"/>
-                    </svg>
-                </div>
-                <h1>TestLab</h1>
-                <p class="subtitle">Convierte tus apuntes en exámenes interactivos</p>
+        <header class="app-header">
+            <p class="wordmark">TestLab</p>
+            <div class="header-actions">
+                <button id="settings-btn" class="icon-toggle" type="button" aria-label="Ajustes">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+                <button id="theme-toggle" class="icon-toggle" type="button" aria-label="Cambiar tema">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
             </div>
-
-            <div class="upload-left">
-                <div id="drop-zone" class="drop-zone">
-                    <input type="file" id="file-input" accept=".csv,.json,text/csv,application/json" multiple hidden>
-                    <div class="drop-zone-content">
-                        <div class="upload-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                        </div>
-                        <p class="drop-main">Arrastra archivos CSV o JSON aquí</p>
-                        <p class="drop-sub">o <button type="button" class="link-btn" id="browse-btn">busca en tu equipo</button></p>
-                    </div>
+        </header>
+        <div class="library-column">
+            <h1 id="library-title">Mis tests</h1>
+            <div class="library-toolbar">
+                <button type="button" id="import-btn" class="nav-btn primary">Importar test</button>
+                <button type="button" id="new-folder-btn" class="nav-btn">Nueva carpeta</button>
+                <div class="library-field">
+                    <label for="library-sort">Ordenar por</label>
+                    <select id="library-sort">
+                        <option value="manual">Manual</option>
+                        <option value="name">Nombre (A–Z)</option>
+                        <option value="imported">Fecha de importación</option>
+                        <option value="score">Última nota</option>
+                    </select>
                 </div>
-
-                <div class="paste-section">
-                    <button type="button" class="nav-btn" id="toggle-paste-btn" style="width: 100%; justify-content: center; background: var(--bg-element);">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                        Pegar texto manualmente
-                    </button>
-                    <div id="paste-collapse" class="hidden" style="margin-top: 16px;">
-                        <div class="textarea-wrapper">
-                            <textarea id="paste-input" placeholder="CSV: Pregunta;SINGLE;Opción A;Opción B;A&#10;JSON v1: { &quot;schemaVersion&quot;: 1, &quot;questions&quot;: [ ... ] }"></textarea>
-                            <button id="load-paste-btn" class="nav-btn primary" disabled>Añadir al Repositorio</button>
-                        </div>
-                    </div>
-                    <div id="import-errors" role="alert"></div>
-                </div>
-
-                <a href="https://gemini.google.com/gem/1kTBWN4ZZ0rlxpnbaalrRotSjX-vYZHcO?usp=sharing" target="_blank" rel="noopener noreferrer" class="nav-btn" style="width: 100%; justify-content: center; background: var(--bg-element); text-decoration: none; margin-top: 12px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 11.5 8.5 8 12C11.5 15.5 12 22 12 22C12 22 12.5 15.5 16 12C12.5 8.5 12 2 12 2Z" fill="currentColor"/></svg>
-                    Abrir Gem de TestLab
-                </a>
+                <button type="button" id="select-all-btn" class="nav-btn">Seleccionar todo</button>
+                <button type="button" id="delete-selected-btn" class="nav-btn hidden">Borrar seleccionados</button>
             </div>
-
-            <div class="upload-right">
-                <!-- Repository Section -->
-                <div class="repo-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                        <h2 style="font-size: 1.25rem; font-weight: 600; margin: 0;">Repositorio</h2>
-                        <div style="display: flex; gap: 8px;">
-                            <button id="select-all-btn" class="nav-btn" style="padding: 6px 12px; font-size: 0.8rem;">Seleccionar todo</button>
-                            <button id="delete-selected-btn" class="nav-btn hidden" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); color: var(--incorrect); border-color: var(--incorrect);">Borrar seleccionados</button>
-                        </div>
-                    </div>
-                    <div class="library-toolbar">
-                        <button type="button" id="new-folder-btn" class="nav-btn">Nueva carpeta</button>
-                        <div class="library-field">
-                            <label for="library-sort">Ordenar por</label>
-                            <select id="library-sort">
-                                <option value="manual">Manual</option>
-                                <option value="name">Nombre (A–Z)</option>
-                                <option value="imported">Fecha de importación</option>
-                                <option value="score">Última nota</option>
-                            </select>
-                        </div>
-                        <div class="library-field">
-                            <label for="import-folder">Guardar en</label>
-                            <select id="import-folder">
-                                <option value="">Sin clasificar</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="history-list" class="history-list"></div>
-                </div>
-            </div>
-
+            <div id="history-list" class="history-list"></div>
         </div>
     </main>
+
+    <!-- Modal Import -->
+    <dialog id="import-dialog" class="modal" aria-labelledby="import-dialog-title">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="import-dialog-title">Importar test</h2>
+                <button type="button" id="close-import-dialog" class="back-btn" aria-label="Cerrar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="import-file-section">
+                <input type="file" id="file-input" accept=".csv,.json,.txt,text/csv,application/json,text/plain" multiple style="display: none;">
+                <button type="button" id="choose-files-btn" class="nav-btn primary" autofocus>Elegir archivos</button>
+                <p class="import-help">Uno o más archivos .csv o .json. También vale un .txt con ese mismo contenido.</p>
+                <div id="drop-zone" class="drop-zone">
+                    <p class="drop-main">O arrastra archivos aquí</p>
+                </div>
+            </div>
+            <div class="import-paste-section">
+                <label for="paste-input">Pegar CSV o JSON v1</label>
+                <textarea id="paste-input" placeholder="CSV: Pregunta;SINGLE;Opción A;Opción B;A&#10;JSON v1: { &quot;schemaVersion&quot;: 1, &quot;questions&quot;: [ ... ] }"></textarea>
+                <button type="button" id="load-paste-btn" class="nav-btn primary" disabled>Añadir texto</button>
+            </div>
+            <div class="import-dest-section">
+                <label for="import-folder">Guardar en</label>
+                <select id="import-folder">
+                    <option value="">Sin clasificar</option>
+                </select>
+            </div>
+            <div id="import-errors" role="alert"></div>
+            <div class="import-gem-section">
+                <a href="https://gemini.google.com/gem/1kTBWN4ZZ0rlxpnbaalrRotSjX-vYZHcO?usp=sharing" target="_blank" rel="noopener noreferrer">Abrir Gem de TestLab</a>
+                <span>El Gem es un recurso externo y opcional. TestLab no genera las preguntas.</span>
+            </div>
+        </div>
+    </dialog>
 
     <!-- Modal Settings -->
     <dialog id="settings-modal" class="modal">

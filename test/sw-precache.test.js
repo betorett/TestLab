@@ -4,7 +4,7 @@ import test from 'node:test';
 
 test('the service worker precache lists real files and the new modules', () => {
   const source = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-  assert.match(source, /testlab-v10/);
+  assert.match(source, /testlab-v11/);
   assert.match(source, /src\/library\.js/);
   assert.match(source, /src\/render-library\.js/);
   assert.match(source, /src\/ai-prompt\.js/);

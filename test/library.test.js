@@ -62,7 +62,7 @@ test('legacy banks show up as Sin clasificar and reading does not write', () => 
   assert.notEqual(view.tests[0].id, view.tests[1].id);
   assert.match(view.tests[0].id, /^legacy:[0-9a-f]{8}:0$/);
   assert.match(view.tests[1].id, /^legacy:[0-9a-f]{8}:1$/);
-  assert.deepEqual(view.breadcrumbs, [{ id: null, name: 'Repositorio' }]);
+  assert.deepEqual(view.breadcrumbs, [{ id: null, name: 'Mis tests' }]);
   assert.equal(library.listFolders().length, 0);
   assert.equal(library.getSort(), 'manual');
   assert.equal(library.getTest(view.tests[0].id).questions[0].text, 'Viejo');
@@ -102,7 +102,7 @@ test('folders nest, reject empty names and cycles, and keep broken data', () => 
   assert.equal(library.view(fluidos.id).folders[0].name, 'Tema 3');
   assert.deepEqual(
     library.view(nota.id).breadcrumbs.map((crumb) => crumb.name),
-    ['Repositorio', 'Ingeniería de Fluidos', 'Tema 3', 'Nota']
+    ['Mis tests', 'Ingeniería de Fluidos', 'Tema 3', 'Nota']
   );
   assert.deepEqual(library.listFolders().map((folder) => folder.path), [
     'Ingeniería de Fluidos',
@@ -150,7 +150,7 @@ test('a folder with a missing parent is shown once at the root', () => {
   const view = library.view(null);
   assert.equal(view.folders.length, 1);
   assert.equal(view.folders[0].name, 'Huérfana');
-  assert.deepEqual(library.view('f_lost').breadcrumbs.map((crumb) => crumb.name), ['Repositorio', 'Huérfana']);
+  assert.deepEqual(library.view('f_lost').breadcrumbs.map((crumb) => crumb.name), ['Mis tests', 'Huérfana']);
   assert.equal(storage.getItem('testlab-library'), stored);
 });
 

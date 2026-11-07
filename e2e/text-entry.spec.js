@@ -46,11 +46,13 @@ const bank = {
 
 async function openBank(page, mode) {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Pegar texto manualmente' }).click();
+  const opener = page.locator('#import-btn');
+  if (await opener.isVisible()) await opener.click();
+  else await page.locator('#empty-import').click();
   await page.locator('#paste-input').fill(JSON.stringify(bank));
-  await page.getByRole('button', { name: 'Añadir al Repositorio' }).click();
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
   await expect(page.locator('#import-errors')).toBeEmpty();
-  await page.getByRole('button', { name: 'Empezar examen' }).click();
+  await page.getByRole('button', { name: 'Empezar Entrada de texto' }).click();
   await page.getByRole('button', { name: mode === 'study' ? /Modo Estudio/ : /Modo Examen/ }).click();
 }
 
@@ -289,11 +291,13 @@ test('review keeps the short answer and score when verdict buttons are pressed',
     ]
   };
   await page.goto('/');
-  await page.getByRole('button', { name: 'Pegar texto manualmente' }).click();
+  const opener = page.locator('#import-btn');
+  if (await opener.isVisible()) await opener.click();
+  else await page.locator('#empty-import').click();
   await page.locator('#paste-input').fill(JSON.stringify(reviewBank));
-  await page.getByRole('button', { name: 'Añadir al Repositorio' }).click();
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
   await expect(page.locator('#import-errors')).toBeEmpty();
-  await page.getByRole('button', { name: 'Empezar examen' }).click();
+  await page.getByRole('button', { name: 'Empezar Revisión corta' }).click();
   await page.getByRole('button', { name: /Modo Examen/ }).click();
 
   const area = page.getByLabel('Tu respuesta');

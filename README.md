@@ -165,7 +165,7 @@ No hay exportador CSV→JSON. El modelo interno es el mismo, pero la migración 
 
 ## Biblioteca
 
-El Repositorio es una biblioteca de carpetas, sin límite de niveles y sin asignaturas ni etiquetas. En cada nivel se ven sus subcarpetas y, debajo, sus tests. La ruta son migas de pan. «Sin clasificar» no es una carpeta: es la raíz para los tests que no están en ninguna.
+Mis tests es la biblioteca de carpetas, sin límite de niveles y sin asignaturas ni etiquetas. En cada nivel se ven sus subcarpetas y, debajo, sus tests. La ruta son migas de pan. «Sin clasificar» no es una carpeta: es la raíz para los tests que no están en ninguna.
 
 `testlab-history` sigue guardando los bancos y la última nota, no la sesión a medias. Una pregunta antigua `{ text, type, options, correct }` se abre y se corrige igual. Leer no reescribe ese JSON ni crea el índice.
 

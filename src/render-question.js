@@ -70,7 +70,11 @@ export function renderQuestion(container, question, answer, ctx) {
   appendImage(container, question);
 
   if (question.type === 'FILL_BLANK') renderBlanks(container, question, answer, ctx);
-  else container.append(el(doc, 'p', 'question-text', question.prompt));
+  else {
+    const promptEl = el(doc, 'p', 'question-text', question.prompt);
+    promptEl.id = `${ctx.idPrefix}-prompt`;
+    container.append(promptEl);
+  }
 
   if (question.type === 'MULTIPLE') {
     container.append(el(doc, 'p', 'meta', 'Puedes elegir varias respuestas.'));
@@ -124,6 +128,8 @@ function renderChoices(container, question, answer, ctx) {
   const doc = container.ownerDocument;
   const selected = Array.isArray(answer) ? answer : [];
   const list = el(doc, 'div', 'options-list');
+  list.setAttribute('role', 'group');
+  list.setAttribute('aria-labelledby', `${ctx.idPrefix}-prompt`);
   const reveal = Boolean(ctx.reveal);
   question.body.choices.forEach((choice) => {
     const button = el(doc, 'button', 'option-btn');
@@ -133,8 +139,13 @@ function renderChoices(container, question, answer, ctx) {
     button.append(el(doc, 'span', 'option-text', choice.text));
     const pressed = selected.includes(choice.id);
     button.setAttribute('aria-pressed', String(pressed));
-    if (pressed) button.classList.add('selected');
-    if (question.type === 'MULTIPLE') button.append(el(doc, 'span', 'checkbox-icon', pressed ? '✓' : ''));
+    if (pressed) {
+      button.classList.add('selected');
+      button.append(el(doc, 'span', 'checkbox-icon', '✓'));
+      button.append(el(doc, 'span', 'visually-hidden', 'Seleccionada'));
+    } else if (question.type === 'MULTIPLE') {
+      button.append(el(doc, 'span', 'checkbox-icon', ''));
+    }
     if (reveal) {
       const isCorrect = question.body.correctIds.includes(choice.id);
       if (isCorrect && pressed) button.classList.add('correct');

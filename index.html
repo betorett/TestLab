@@ -185,14 +185,13 @@
     <main id="exam-screen" class="screen" hidden>
         <div class="exam-layout">
             <header class="exam-topbar">
-                <button class="back-btn" id="quit-btn" title="Salir">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <button type="button" class="nav-btn" id="quit-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Salir
                 </button>
                 <div class="progress-section">
                     <span id="question-counter" class="counter-text">1 / 10</span>
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progress-fill"></div>
-                    </div>
+                    <progress id="exam-progress" aria-label="Progreso del examen" max="1" value="0"></progress>
                 </div>
             </header>
 
@@ -202,31 +201,30 @@
             </div>
 
             <footer class="exam-bottombar">
-                <button id="prev-btn" class="nav-btn hidden">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <button type="button" id="prev-btn" class="nav-btn hidden">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
                     Anterior
                 </button>
-                <div class="spacer"></div>
                 
-                <button id="skip-btn" class="nav-btn hidden">
+                <button type="button" id="skip-btn" class="nav-btn hidden">
                     Saltar
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
                 </button>
 
-                <button id="ai-help-btn" class="nav-btn hidden" style="color: var(--accent); border-color: rgba(99, 102, 241, 0.4); background: var(--accent-subtle);">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 11.5 8.5 8 12C11.5 15.5 12 22 12 22C12 22 12.5 15.5 16 12C12.5 8.5 12 2 12 2Z" fill="currentColor"/></svg>
+                <button type="button" id="ai-help-btn" class="nav-btn hidden">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2C12 2 11.5 8.5 8 12C11.5 15.5 12 22 12 22C12 22 12.5 15.5 16 12C12.5 8.5 12 2 12 2Z" fill="currentColor"/></svg>
                     Duda IA
                 </button>
 
-                <button id="check-multiple-btn" class="nav-btn primary hidden">
+                <button type="button" id="check-multiple-btn" class="nav-btn primary hidden">
                     Comprobar
                 </button>
 
-                <button id="next-btn" class="nav-btn primary hidden">
+                <button type="button" id="next-btn" class="nav-btn primary hidden">
                     Siguiente
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
-                <button id="submit-exam-btn" class="nav-btn primary hidden">Finalizar</button>
+                <button type="button" id="submit-exam-btn" class="nav-btn primary hidden">Finalizar</button>
             </footer>
         </div>
     </main>

@@ -486,26 +486,38 @@ dialog::backdrop {
 .mode-info p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.45; margin: 0; }
 
 /* ===== EXAM SCREEN ===== */
-.exam-layout { width: 100%; max-width: 640px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; padding: 20px; }
-.exam-topbar { display: flex; align-items: center; gap: 20px; padding-bottom: 20px; flex-shrink: 0; }
-.progress-section { flex: 1; }
-.counter-text { font-size: 0.8rem; color: var(--text-tertiary); font-weight: 500; display: block; margin-bottom: 6px; }
-.progress-track { width: 100%; height: 4px; background: var(--bg-element); border-radius: 2px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--accent); width: 0%; border-radius: 2px; transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.exam-layout { width: 100%; max-width: 640px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; }
+.exam-topbar { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; flex-shrink: 0; }
+.progress-section { flex: 1; min-width: 0; }
+.counter-text { font-size: 0.85rem; color: var(--text-tertiary); font-weight: 500; display: block; margin-bottom: 6px; }
 
-.question-area { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; overflow-y: auto; padding: 20px 0; }
-.question-text { font-size: 1.25rem; font-weight: 600; line-height: 1.5; color: var(--text-primary); margin-bottom: 32px; letter-spacing: -0.01em; }
+progress.exam-progress, #exam-progress {
+  appearance: none;
+  border: 0 solid;
+  overflow: clip;
+  width: 100%;
+  height: 8px;
+  background: var(--bg-element);
+  border-radius: 4px;
+}
+#exam-progress::-webkit-progress-bar { background: transparent; border-radius: 4px; }
+#exam-progress::-webkit-progress-value { background: var(--accent-bar); border-radius: 4px; }
+#exam-progress::-moz-progress-bar { background: var(--accent-bar); border-radius: 4px; }
+
+.question-area { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; min-height: 0; overflow-y: auto; padding: 16px 0; scroll-padding-bottom: 64px; }
+.question-text { font-size: 18px; font-weight: 600; line-height: 1.4; color: var(--text-primary); margin-bottom: 24px; letter-spacing: -0.01em; }
 .options-list { display: flex; flex-direction: column; gap: 10px; }
 
 .option-btn {
     display: flex; align-items: center; gap: 14px; width: 100%;
-    padding: 14px 18px; border-radius: var(--radius-md);
+    min-height: 48px; padding: 12px 16px; border-radius: var(--radius-md);
     border: 1px solid var(--border); background: var(--bg-raised);
-    color: var(--text-primary); font-family: var(--font); font-size: 0.95rem;
+    color: var(--text-primary); font-family: var(--font); font-size: 16px; line-height: 1.4;
     text-align: left; cursor: pointer; transition: all var(--transition);
     opacity: 0; transform: translateY(10px); animation: staggerEnter 0.4s ease forwards;
+    box-sizing: border-box;
 }
-.option-btn:hover:not(:disabled) { border-color: var(--border-hover); background: var(--bg-element); transform: translateX(4px); }
+.option-btn:hover:not(:disabled) { border-color: var(--border-hover); background: var(--bg-element); transform: none; }
 .option-btn:active:not(:disabled) { transform: scale(0.98); }
 
 @keyframes staggerEnter { to { opacity: 1; transform: translateY(0); } }
@@ -564,8 +576,23 @@ dialog::backdrop {
 .ai-help-text strong { font-size: 0.9rem; display: block; margin-bottom: 2px; color: var(--text-primary); }
 .ai-help-text span { font-size: 0.8rem; color: var(--text-tertiary); }
 
-.exam-bottombar { display: flex; align-items: center; gap: 12px; padding-top: 20px; flex-shrink: 0; }
-.spacer { flex: 1; }
+.exam-bottombar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  padding-top: 8px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.exam-bottombar .nav-btn {
+  min-height: 48px;
+  font-size: 16px;
+  flex: 1 1 calc(50% - 8px);
+  white-space: nowrap;
+}
+.exam-bottombar .nav-btn.primary { flex-basis: 100%; }
 
 /* ===== RESULTS SCREEN ===== */
 .results-layout { width: 100%; max-width: 400px; padding: 20px; text-align: center; }

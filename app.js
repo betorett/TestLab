@@ -71,7 +71,7 @@ const ui = {
   questionContainer: $('question-container'),
   questionStatus: $('question-status'),
   counter: $('question-counter'),
-  progressFill: $('progress-fill'),
+  examProgress: $('exam-progress'),
   prevBtn: $('prev-btn'),
   skipBtn: $('skip-btn'),
   aiHelpBtn: $('ai-help-btn'),
@@ -357,7 +357,8 @@ function renderCurrent() {
   const answer = userAnswers[currentIndex];
   ui.counter.textContent = `${currentIndex + 1} / ${questions.length}`;
   const answeredCount = userAnswers.filter((item, index) => countsAsAnswered(questions[index], item)).length;
-  ui.progressFill.style.width = `${(answeredCount / questions.length) * 100}%`;
+  ui.examProgress.max = questions.length;
+  ui.examProgress.value = answeredCount;
   const rendered = renderQuestion(ui.questionContainer, question, answer, {
     idPrefix: `q${currentIndex}`,
     reveal: shouldReveal(question, answer),

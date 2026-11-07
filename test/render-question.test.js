@@ -133,3 +133,35 @@ test('review keeps a short answer visible and refuses verdict changes', () => {
   assert.deepEqual(updates, []);
   assert.equal(area.value, text);
 });
+
+test('single and multiple choices mark the chosen option semantically', () => {
+  const root = mount();
+  renderQuestion(root, base('SINGLE', {
+    choices: [{ id: 'A', text: 'Sí' }, { id: 'B', text: 'No' }],
+    correctIds: ['A']
+  }), ['A'], {
+    idPrefix: 'q0',
+    reveal: false,
+    onAnswer() {}
+  });
+  const list = root.querySelector('.options-list');
+  assert.equal(list.getAttribute('role'), 'group');
+  assert.equal(list.getAttribute('aria-labelledby'), 'q0-prompt');
+  assert.equal(root.querySelector('#q0-prompt').textContent, 'Enunciado');
+  const buttons = [...root.querySelectorAll('.option-btn')];
+  assert.equal(buttons.length, 2);
+  assert.equal(buttons[0].getAttribute('aria-pressed'), 'true');
+  assert.match(buttons[0].textContent, /✓/);
+  assert.match(buttons[0].textContent, /Seleccionada/);
+  assert.equal(buttons[1].getAttribute('aria-pressed'), 'false');
+  assert.doesNotMatch(buttons[1].textContent, /Seleccionada/);
+
+  const tfRoot = mount();
+  renderQuestion(tfRoot, base('TRUE_FALSE', { correct: true }), [], {
+    idPrefix: 'tf',
+    reveal: false,
+    onAnswer() {}
+  });
+  assert.ok(tfRoot.querySelector('input[type="radio"]'));
+  assert.equal(tfRoot.querySelector('.option-btn'), null);
+});

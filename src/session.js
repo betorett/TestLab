@@ -38,7 +38,7 @@ export function isReadyToCheck(question, answer) {
         && answer.length === question.body.pairs.length
         && answer.every((value) => String(value).trim() !== '');
     case 'ORDERING':
-      return Boolean(answer.confirmed);
+      return Array.isArray(answer?.order) && answer.order.length > 0;
     case 'SHORT_ANSWER':
       return String(answer.text ?? '').trim() !== '';
     default:

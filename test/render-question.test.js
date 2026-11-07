@@ -91,6 +91,18 @@ test('short answers show the model and never turn green from matching text', () 
     reveal: false,
     onAnswer(next) { updates.push(next); }
   });
+  assert.equal(root.querySelector('.model-answer'), null);
+  assert.equal(root.querySelector('.short-actions'), null);
+
+  renderQuestion(root, base('SHORT_ANSWER', { modelAnswer: model }), {
+    text: model,
+    verdict: null
+  }, {
+    idPrefix: 'short',
+    reveal: true,
+    isReviewing: false,
+    onAnswer(next) { updates.push(next); }
+  });
   assert.match(root.textContent, /Conservar el movimiento/);
   assert.match(root.textContent, /Pendiente de autoevaluación/);
   assert.equal(root.querySelector('.is-correct'), null);

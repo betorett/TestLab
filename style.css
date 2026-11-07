@@ -1752,13 +1752,6 @@ textarea {
     display: inline-block;
     line-height: 1;
 }
-.ordering-confirm-btn {
-    width: 100%;
-}
-.ordering-confirm-btn.is-confirmed {
-    border-color: var(--accent-bar);
-    background: var(--accent-subtle);
-}
 
 .model-answer {
     margin-top: 12px;

@@ -350,6 +350,7 @@ function onGlobalKeyDown(event) {
   if (isEditableTarget(event.target)) return;
 
   if (event.key === 'Enter') {
+    if (event.target?.closest?.('button')) return;
     if (!ui.checkMultipleBtn.classList.contains('hidden') && !ui.checkMultipleBtn.disabled) {
       event.preventDefault();
       ui.checkMultipleBtn.click();
@@ -539,7 +540,7 @@ function updateExamModeBadge() {
 
 function shouldReveal(question, answer) {
   if (isReviewing) return true;
-  if (mode !== 'study' || question.type === 'SHORT_ANSWER') return false;
+  if (mode !== 'study') return false;
   if (answer === 'SKIPPED') return true;
   if (question.type === 'SINGLE' || question.type === 'TRUE_FALSE') {
     return gradeQuestion(question, answer) !== 'skipped';
@@ -632,6 +633,7 @@ function renderCurrent() {
     idPrefix: `q${currentIndex}`,
     reveal: shouldReveal(question, answer),
     optionOrder: optionOrders[currentIndex],
+    isReviewing,
     onAnswer
   });
   if (!rendered?.preserved) renderMath(ui.questionContainer);
@@ -645,8 +647,13 @@ function onAnswer(next) {
   const question = questions[index];
   userAnswers[index] = next;
   if (question.type !== 'SINGLE' && question.type !== 'TRUE_FALSE') {
-    isAnswerChecked = false;
-    checkedQuestions[index] = false;
+    if (question.type === 'SHORT_ANSWER' && next?.verdict != null) {
+      isAnswerChecked = true;
+      checkedQuestions[index] = true;
+    } else {
+      isAnswerChecked = false;
+      checkedQuestions[index] = false;
+    }
   }
   renderCurrent();
   if (mode === 'exam' && (question.type === 'SINGLE' || question.type === 'TRUE_FALSE')) {
@@ -696,7 +703,7 @@ function updateNavButtons() {
   }
   if (!advanced) {
     ui.skipBtn.classList.remove('hidden');
-    if (!['SINGLE', 'TRUE_FALSE', 'SHORT_ANSWER'].includes(question.type)) {
+    if (!['SINGLE', 'TRUE_FALSE'].includes(question.type) && !isAnswerChecked) {
       ui.checkMultipleBtn.classList.remove('hidden');
       ui.checkMultipleBtn.disabled = !isReadyToCheck(question, answer);
     }
@@ -715,14 +722,14 @@ function showSubmit(label, handler) {
 function prevQuestion() {
   if (currentIndex === 0) return;
   currentIndex -= 1;
-  isAnswerChecked = false;
+  isAnswerChecked = Boolean(checkedQuestions[currentIndex]);
   renderCurrent();
 }
 
 function nextQuestion() {
   if (currentIndex >= questions.length - 1) return;
   currentIndex += 1;
-  isAnswerChecked = false;
+  isAnswerChecked = Boolean(checkedQuestions[currentIndex]);
   renderCurrent();
 }
 
@@ -740,6 +747,13 @@ function skipQuestion() {
 }
 
 function checkAnswers() {
+  const q = questions[currentIndex];
+  if (q.type === 'ORDERING' && userAnswers[currentIndex]) {
+    userAnswers[currentIndex] = {
+      ...userAnswers[currentIndex],
+      confirmed: true
+    };
+  }
   isAnswerChecked = true;
   checkedQuestions[currentIndex] = true;
   renderCurrent();
@@ -790,6 +804,11 @@ function renderResultsBreakdown() {
 }
 
 function finishExam() {
+  questions.forEach((question, index) => {
+    if (question.type === 'ORDERING' && userAnswers[index] && userAnswers[index] !== 'SKIPPED') {
+      userAnswers[index] = { ...userAnswers[index], confirmed: true };
+    }
+  });
   const result = scoreExam(questions, userAnswers, penaltyFactor);
   ui.scoreText.textContent = result.scoreLabel;
   const pending = result.pending ? ` | ⏳ ${result.pending} pendientes` : '';

@@ -73,46 +73,10 @@ function syncShortVerdict(container, answer) {
 }
 
 function syncShortSection(container, question, answer, ctx) {
-  const hasText = Boolean(answer?.text && answer.text.trim() !== '');
+  const isRevealed = Boolean(ctx.reveal) || Boolean(answer?.verdict);
   const model = container.querySelector('.model-answer');
   const actions = container.querySelector('.short-actions');
-  const doc = container.ownerDocument;
-
-  if (hasText && !model) {
-    const newModel = el(doc, 'p', 'model-answer');
-    const modelLabel = el(doc, 'span', 'model-label', 'Respuesta modelo: ');
-    newModel.append(modelLabel, doc.createTextNode(question.body.modelAnswer));
-
-    const correct = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he acertado');
-    correct.type = 'button';
-    correct.disabled = Boolean(ctx.reveal);
-    correct.setAttribute('aria-pressed', String(answer.verdict === 'correct'));
-
-    const incorrect = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he fallado');
-    incorrect.type = 'button';
-    incorrect.disabled = Boolean(ctx.reveal);
-    incorrect.setAttribute('aria-pressed', String(answer.verdict === 'incorrect'));
-
-    const area = container.querySelector('textarea');
-    const choose = (verdict) => {
-      if (ctx.reveal) return;
-      ctx.onAnswer({ text: area?.value || '', verdict });
-    };
-    correct.addEventListener('click', () => choose('correct'));
-    incorrect.addEventListener('click', () => choose('incorrect'));
-    if (answer.verdict === 'correct') correct.classList.add('is-correct');
-    if (answer.verdict === 'incorrect') incorrect.classList.add('is-incorrect');
-
-    const newActions = el(doc, 'div', 'short-actions');
-    newActions.append(correct, incorrect);
-    const statusNode = container.querySelector('.answer-status');
-    if (statusNode) {
-      container.insertBefore(newModel, statusNode);
-      container.insertBefore(newActions, statusNode);
-    } else {
-      container.append(newModel, newActions);
-    }
-  } else if (!hasText && model && !ctx.reveal && !answer?.verdict) {
+  if (!isRevealed && model) {
     model.remove();
     actions?.remove();
   } else if (actions) {
@@ -500,11 +464,6 @@ function renderOrdering(container, question, answer, ctx) {
     list.append(itemNode);
   });
   container.append(list);
-  const confirm = el(doc, 'button', `nav-btn ordering-confirm-btn${state.confirmed ? ' is-confirmed' : ''}`, 'Confirmar este orden');
-  confirm.type = 'button';
-  confirm.disabled = Boolean(ctx.reveal);
-  confirm.addEventListener('click', () => ctx.onAnswer({ order: state.order.slice(), confirmed: true }));
-  container.append(confirm);
   if (ctx.reveal && gradeQuestion(question, state) !== 'correct') {
     container.append(el(doc, 'p', 'model-answer', `Orden correcto: ${question.body.items.join(' → ')}`));
   }
@@ -533,25 +492,27 @@ function renderShort(container, question, answer, ctx) {
 
   container.append(label, area);
 
-  const hasAnswered = Boolean(current.text && current.text.trim() !== '') || Boolean(current.verdict) || Boolean(ctx.reveal);
+  const isRevealed = Boolean(ctx.reveal) || Boolean(current.verdict);
 
-  if (hasAnswered) {
+  if (isRevealed) {
     const model = el(doc, 'p', 'model-answer');
     const modelLabel = el(doc, 'span', 'model-label', 'Respuesta modelo: ');
     model.append(modelLabel, doc.createTextNode(question.body.modelAnswer));
 
+    const isReviewing = ctx.isReviewing ?? Boolean(ctx.reveal && current.verdict !== null);
+
     const correct = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he acertado');
     correct.type = 'button';
-    correct.disabled = locked;
+    correct.disabled = isReviewing;
     correct.setAttribute('aria-pressed', String(current.verdict === 'correct'));
 
     const incorrect = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he fallado');
     incorrect.type = 'button';
-    incorrect.disabled = locked;
+    incorrect.disabled = isReviewing;
     incorrect.setAttribute('aria-pressed', String(current.verdict === 'incorrect'));
 
     const choose = (verdict) => {
-      if (locked) return;
+      if (isReviewing) return;
       ctx.onAnswer({ text: area.value, verdict });
     };
     correct.addEventListener('click', () => choose('correct'));
@@ -575,10 +536,11 @@ function move(items, from, to) {
 function statusInfo(question, answer, ctx) {
   if (question.type === 'SHORT_ANSWER') {
     const text = String(answer?.text ?? '').trim();
-    if (!text && !ctx.reveal && !answer?.verdict) {
+    const isRevealed = Boolean(ctx.reveal) || Boolean(answer?.verdict);
+    if (!isRevealed || !text) {
       return { tone: '', text: '' };
     }
-    if (!text || (answer?.verdict !== 'correct' && answer?.verdict !== 'incorrect')) {
+    if (answer?.verdict !== 'correct' && answer?.verdict !== 'incorrect') {
       return {
         tone: 'pending',
         text: 'Pendiente de autoevaluación. No se puntúa automáticamente.'
@@ -587,12 +549,6 @@ function statusInfo(question, answer, ctx) {
     return {
       tone: answer.verdict === 'correct' ? 'correct' : 'incorrect',
       text: answer.verdict === 'correct' ? 'Marcada como correcta' : 'Marcada como incorrecta'
-    };
-  }
-  if (question.type === 'ORDERING' && answer && !answer.confirmed && !ctx.reveal) {
-    return {
-      tone: 'info',
-      text: 'Confirma el orden para que cuente como respuesta.'
     };
   }
   if (!ctx.reveal) return { tone: '', text: '' };

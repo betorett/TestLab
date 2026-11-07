@@ -44,6 +44,6 @@ test('ordering stays skipped until confirmed, and shuffle is deterministic for a
   }), false);
   assert.equal(countsAsAnswered(short, { text: 'Modelo', verdict: null }), true);
   assert.equal(countsAsAnswered(single, []), false);
-  assert.equal(isReadyToCheck(ordering, unconfirmed), false);
+  assert.equal(isReadyToCheck(ordering, unconfirmed), true);
   assert.equal(isReadyToCheck(ordering, { ...unconfirmed, confirmed: true }), true);
 });

@@ -141,9 +141,8 @@ test('study typing keeps focus, caret, earlier blanks, paste and grading', async
   await expect(page.getByRole('button', { name: 'La he acertado' })).toBeHidden();
   await area.click();
   await area.pressSequentially('abcd', { delay: 15 });
-  await expect(page.getByText('Tendencia a conservar el movimiento')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'La he fallado' })).toBeEnabled();
+  await expect(page.getByText('Tendencia a conservar el movimiento')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeHidden();
   await expect(area).toHaveValue('abcd');
   await expectCaret(area, 4);
   await typeAt(area, 2, 2, 'XY');
@@ -160,6 +159,12 @@ test('study typing keeps focus, caret, earlier blanks, paste and grading', async
   await area.press('Control+V');
   await expect(area).toHaveValue('una respuesta distinta');
   await expect(area).toBeFocused();
+  await expect(page.getByText('Tendencia a conservar el movimiento')).toBeHidden();
+
+  await page.getByRole('button', { name: 'Comprobar' }).click();
+  await expect(page.getByText('Tendencia a conservar el movimiento')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'La he fallado' })).toBeEnabled();
   await expect(page.locator('.answer-status')).toContainText('Pendiente de autoevaluación');
   await expect(page.locator('.is-correct')).toHaveCount(0);
 
@@ -168,14 +173,10 @@ test('study typing keeps focus, caret, earlier blanks, paste and grading', async
   await page.getByRole('button', { name: 'Anterior' }).click();
   await expect(page.getByLabel('Valor', { exact: true })).toHaveValue('9,81');
   await expect(page.locator('.numeric-unit-badge')).toHaveText('m/s^2');
-  await expect(page.getByLabel('Valor', { exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Anterior' })).toBeHidden();
-  await page.getByRole('button', { name: 'Comprobar', exact: true }).click();
-  await expect(page.locator('.answer-status')).toHaveText('Respuesta correcta');
+  await expect(page.getByRole('button', { name: 'Anterior' })).toBeVisible();
   await page.getByRole('button', { name: 'Anterior' }).click();
   await expect(page.getByLabel('Hueco 1')).toHaveValue('Francia');
   await expect(page.getByLabel('Hueco 2')).toHaveValue('España');
-  await expect(page.getByLabel('Hueco 1')).toBeEnabled();
 });
 
 test('exam typing keeps answers while moving between questions', async ({ page }) => {
@@ -208,8 +209,8 @@ test('exam typing keeps answers while moving between questions', async ({ page }
   await typeAt(area, 'respuesta'.length, 'respuesta'.length, ' larga');
   await expect(area).toHaveValue('respuesta larga de examen');
   await expectCaret(area, 'respuesta larga'.length);
-  await page.getByRole('button', { name: 'La he acertado' }).click();
-  await expect(page.locator('.answer-status')).toHaveText('Marcada como correcta');
+  await expect(page.getByText('Tendencia a conservar el movimiento')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
 
   await page.getByRole('button', { name: 'Anterior' }).click();
   await expect(page.getByLabel('Valor', { exact: true })).toHaveValue('1X4');
@@ -223,7 +224,6 @@ test('exam typing keeps answers while moving between questions', async ({ page }
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByLabel('Tu respuesta')).toHaveValue('respuesta larga de examen');
-  await expect(page.locator('.answer-status')).toHaveText('Marcada como correcta');
 });
 
 test('single, matching and ordering controls stay usable during the exam', async ({ page }) => {
@@ -256,8 +256,7 @@ test('single, matching and ordering controls stay usable during the exam', async
     }
   }
   expect(moved).toBe(true);
-  await expect(page.getByRole('button', { name: 'Confirmar este orden' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Confirmar este orden' }).click();
+  await expect(page.getByRole('button', { name: 'Confirmar este orden' })).toHaveCount(0);
   await expect(page.locator('.ordering-list')).toContainText('Ejecutar');
 });
 
@@ -286,17 +285,19 @@ test('review keeps the short answer and score when verdict buttons are pressed',
   await page.getByRole('button', { name: 'Añadir texto' }).click();
   await expect(page.locator('#import-errors')).toBeEmpty();
   await page.getByRole('button', { name: 'Empezar Revisión corta' }).click();
-  await page.getByRole('button', { name: /Modo Examen/ }).click();
+  await page.getByRole('button', { name: /Modo Estudio/ }).click();
 
   const area = page.getByLabel('Tu respuesta');
   await area.click();
   await area.pressSequentially('texto guardado', { delay: 10 });
+  await page.getByRole('button', { name: 'Comprobar' }).click();
   await expect(page.getByRole('button', { name: 'La he acertado' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'La he fallado' })).toBeEnabled();
   await page.getByRole('button', { name: 'La he acertado' }).click();
   await expect(page.locator('.answer-status')).toHaveText('Marcada como correcta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByLabel('Hueco 1').pressSequentially('Paris', { delay: 10 });
+  await page.getByRole('button', { name: 'Comprobar' }).click();
   await page.getByRole('button', { name: 'Finalizar' }).click();
   await expect(page.locator('#results-screen')).toHaveClass(/active/);
   const score = await page.locator('#final-score').innerText();

@@ -162,12 +162,18 @@ test('short answer hides model answer until answered, numeric omits unit input, 
   await expect(page.getByText('Función con acceso al ámbito')).toBeHidden();
   await expect(page.getByRole('button', { name: 'La he acertado' })).toBeHidden();
 
-  // Type answer -> model answer and verdict buttons become visible
+  // Type answer -> model answer is STILL hidden until clicking Comprobar
   await area.click();
   await area.fill('Una función que recuerda su léxico');
+  await expect(page.getByText('Función con acceso al ámbito')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'La he acertado' })).toBeHidden();
+
+  // Click Comprobar -> NOW model answer and verdict buttons become visible
+  await page.getByRole('button', { name: 'Comprobar' }).click();
   await expect(page.getByText('Función con acceso al ámbito')).toBeVisible();
   await expect(page.getByRole('button', { name: 'La he acertado' })).toBeVisible();
   await page.getByRole('button', { name: 'La he acertado' }).click();
+  await expect(page.locator('.answer-status')).toHaveText('Marcada como correcta');
 
   // Advance to NUMERIC
   await page.getByRole('button', { name: 'Siguiente' }).click();
@@ -188,7 +194,7 @@ test('short answer hides model answer until answered, numeric omits unit input, 
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByText('3 / 3')).toBeVisible();
 
-  // 3. ORDERING: move buttons display arrows and have aria-label, and items are draggable
+  // 3. ORDERING: move buttons display arrows and have aria-label, items are draggable, and no "Confirmar este orden" button
   const items = page.locator('.ordering-item');
   await expect(items).toHaveCount(3);
   await expect(items.first()).toHaveAttribute('draggable', 'true');
@@ -196,4 +202,5 @@ test('short answer hides model answer until answered, numeric omits unit input, 
   const downButtons = page.getByRole('button', { name: /^Bajar / });
   await expect(upButtons.first()).toContainText('↑');
   await expect(downButtons.first()).toContainText('↓');
+  await expect(page.getByRole('button', { name: 'Confirmar este orden' })).toHaveCount(0);
 });

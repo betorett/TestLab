@@ -146,6 +146,9 @@ test('short answer keeps focus and a caret inside the existing text', () => {
   assert.equal(pasted.selectionStart, 'texto pegado'.length);
   assert.equal(session.answer.text, 'texto pegado');
   assert.equal(session.answer.verdict, null);
+  assert.equal(session.root.querySelector('.model-answer'), null);
+
+  session.rerender({ text: 'texto pegado', verdict: null }, { reveal: true, isReviewing: false });
   assert.match(session.root.textContent, /Tendencia a conservar el movimiento/);
 
   const correct = [...session.root.querySelectorAll('button')].find((button) => button.textContent.includes('acertado'));

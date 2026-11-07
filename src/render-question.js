@@ -174,19 +174,35 @@ function renderChoices(container, question, answer, ctx) {
     button.append(el(doc, 'span', 'option-text', choice.text));
     const pressed = selected.includes(choice.id);
     button.setAttribute('aria-pressed', String(pressed));
-    if (pressed) {
-      button.classList.add('selected');
-      button.append(el(doc, 'span', 'checkbox-icon', '✓'));
-      button.append(el(doc, 'span', 'visually-hidden', 'Seleccionada'));
-    } else if (question.type === 'MULTIPLE') {
-      button.append(el(doc, 'span', 'checkbox-icon', ''));
-    }
-    if (reveal) {
-      const isCorrect = question.body.correctIds.includes(choice.id);
-      if (isCorrect && pressed) button.classList.add('correct');
-      if (!isCorrect && pressed) button.classList.add('incorrect');
-      if (isCorrect && !pressed) button.classList.add('missed');
+    if (!reveal) {
+      if (pressed) {
+        button.classList.add('selected');
+        button.append(el(doc, 'span', 'checkbox-icon', '✓'));
+        button.append(el(doc, 'span', 'visually-hidden', 'Seleccionada'));
+      } else if (question.type === 'MULTIPLE') {
+        button.append(el(doc, 'span', 'checkbox-icon', ''));
+      }
+    } else {
       button.disabled = true;
+      const isCorrect = question.body.correctIds.includes(choice.id);
+      if (pressed) {
+        button.classList.add('selected');
+        if (isCorrect) {
+          button.classList.add('correct');
+          button.append(el(doc, 'span', 'checkbox-icon', '✓'));
+          button.append(el(doc, 'span', 'visually-hidden', 'Respuesta correcta'));
+        } else {
+          button.classList.add('incorrect');
+          button.append(el(doc, 'span', 'checkbox-icon', '✕'));
+          button.append(el(doc, 'span', 'visually-hidden', 'Respuesta incorrecta'));
+        }
+      } else if (isCorrect) {
+        button.classList.add('missed');
+        button.append(el(doc, 'span', 'checkbox-icon', '✓'));
+        button.append(el(doc, 'span', 'visually-hidden', 'Respuesta correcta'));
+      } else if (question.type === 'MULTIPLE') {
+        button.append(el(doc, 'span', 'checkbox-icon', ''));
+      }
     }
     button.addEventListener('click', () => {
       if (question.type === 'SINGLE') ctx.onAnswer([choice.id]);

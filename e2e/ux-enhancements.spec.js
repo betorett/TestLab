@@ -32,9 +32,15 @@ function sampleBank(title = 'Banco UX') {
   });
 }
 
+async function openImportDialog(page) {
+  const opener = page.locator('#import-btn');
+  if (await opener.isVisible()) await opener.click();
+  else await page.locator('#empty-import').click();
+}
+
 test('quick launch buttons directly start study and exam modes without intermediate screen', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#empty-import').click();
+  await openImportDialog(page);
   await page.locator('#paste-input').fill(sampleBank('Banco Rápido'));
   await page.getByRole('button', { name: 'Añadir texto' }).click();
 
@@ -53,7 +59,7 @@ test('quick launch buttons directly start study and exam modes without intermedi
 
 test('interactive question map and keyboard shortcuts allow navigation and instant answering', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#empty-import').click();
+  await openImportDialog(page);
   await page.locator('#paste-input').fill(sampleBank('Banco Teclado'));
   await page.getByRole('button', { name: 'Añadir texto' }).click();
   await page.getByRole('button', { name: 'Estudiar Banco Teclado' }).click();
@@ -91,7 +97,7 @@ test('interactive question map and keyboard shortcuts allow navigation and insta
 
 test('results screen displays instant results and breakdown items that open review', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#empty-import').click();
+  await openImportDialog(page);
   await page.locator('#paste-input').fill(sampleBank('Banco Resultados'));
   await page.getByRole('button', { name: 'Añadir texto' }).click();
   await page.getByRole('button', { name: 'Examinar Banco Resultados' }).click();
@@ -152,7 +158,7 @@ test('short answer hides model answer until answered, numeric omits unit input, 
   });
 
   await page.goto('/');
-  await page.locator('#empty-import').click();
+  await openImportDialog(page);
   await page.locator('#paste-input').fill(customBank);
   await page.getByRole('button', { name: 'Añadir texto' }).click();
   await page.getByRole('button', { name: 'Estudiar Banco Mejoras Interfaz' }).click();
@@ -203,4 +209,29 @@ test('short answer hides model answer until answered, numeric omits unit input, 
   await expect(upButtons.first()).toContainText('↑');
   await expect(downButtons.first()).toContainText('↓');
   await expect(page.getByRole('button', { name: 'Confirmar este orden' })).toHaveCount(0);
+});
+
+test('study mode reveals correct answer with checkmark and incorrect selection with cross', async ({ page }) => {
+  await page.goto('/');
+  const opener = page.locator('#import-btn');
+  if (await opener.isVisible()) await opener.click();
+  else await page.locator('#empty-import').click();
+  await page.locator('#paste-input').fill(sampleBank('Banco Reveal Check'));
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
+  await page.getByRole('button', { name: 'Estudiar Banco Reveal Check' }).click();
+  await expect(page.locator('#exam-screen')).toBeVisible();
+
+  // Option A is "300.000 km/s" (correct). Option B is "150.000 km/s" (incorrect).
+  // Click Option B (incorrect answer)
+  const optionB = page.locator('.option-btn', { hasText: '150.000 km/s' });
+  await optionB.click();
+
+  // Option B is marked incorrect and shows cross icon ✕
+  await expect(optionB).toHaveClass(/incorrect/);
+  await expect(optionB.locator('.checkbox-icon')).toHaveText('✕');
+
+  // Option A is marked missed (the actual correct answer) and shows checkmark icon ✓
+  const optionA = page.locator('.option-btn', { hasText: '300.000 km/s' });
+  await expect(optionA).toHaveClass(/missed/);
+  await expect(optionA.locator('.checkbox-icon')).toHaveText('✓');
 });

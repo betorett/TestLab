@@ -177,3 +177,78 @@ test('single and multiple choices mark the chosen option semantically', () => {
   assert.ok(tfRoot.querySelector('input[type="radio"]'));
   assert.equal(tfRoot.querySelector('.option-btn'), null);
 });
+
+test('revealed single choice shows tick on correct option and cross on chosen wrong option', () => {
+  const root = mount();
+  renderQuestion(root, base('SINGLE', {
+    choices: [
+      { id: 'A', text: 'Viscosidad dinámica' },
+      { id: 'B', text: 'Tensión superficial' },
+      { id: 'C', text: 'Presión de vapor' }
+    ],
+    correctIds: ['A']
+  }), ['B'], {
+    idPrefix: 'q-rev',
+    reveal: true,
+    onAnswer() {}
+  });
+
+  const buttons = [...root.querySelectorAll('.option-btn')];
+  assert.equal(buttons.length, 3);
+  assert.ok(buttons.every((btn) => btn.disabled));
+
+  // Option A (correct, missed by user)
+  assert.ok(buttons[0].classList.contains('missed'));
+  assert.ok(!buttons[0].classList.contains('selected'));
+  assert.equal(buttons[0].querySelector('.checkbox-icon')?.textContent, '✓');
+  assert.match(buttons[0].textContent, /Respuesta correcta/);
+
+  // Option B (incorrect, selected by user)
+  assert.ok(buttons[1].classList.contains('incorrect'));
+  assert.ok(buttons[1].classList.contains('selected'));
+  assert.equal(buttons[1].querySelector('.checkbox-icon')?.textContent, '✕');
+  assert.doesNotMatch(buttons[1].textContent, /✓/);
+  assert.match(buttons[1].textContent, /Respuesta incorrecta/);
+
+  // Option C (unselected incorrect option in SINGLE)
+  assert.ok(!buttons[2].classList.contains('correct'));
+  assert.ok(!buttons[2].classList.contains('incorrect'));
+  assert.ok(!buttons[2].classList.contains('missed'));
+  assert.equal(buttons[2].querySelector('.checkbox-icon'), null);
+});
+
+test('revealed multiple choice shows ticks on correct options and cross on wrong selected options', () => {
+  const root = mount();
+  renderQuestion(root, base('MULTIPLE', {
+    choices: [
+      { id: 'A', text: 'Opción 1' },
+      { id: 'B', text: 'Opción 2' },
+      { id: 'C', text: 'Opción 3' },
+      { id: 'D', text: 'Opción 4' }
+    ],
+    correctIds: ['A', 'C']
+  }), ['A', 'B'], {
+    idPrefix: 'q-rev-multi',
+    reveal: true,
+    onAnswer() {}
+  });
+
+  const buttons = [...root.querySelectorAll('.option-btn')];
+  // A: correct & selected -> .selected.correct with '✓'
+  assert.ok(buttons[0].classList.contains('correct'));
+  assert.ok(buttons[0].classList.contains('selected'));
+  assert.equal(buttons[0].querySelector('.checkbox-icon')?.textContent, '✓');
+
+  // B: incorrect & selected -> .selected.incorrect with '✕'
+  assert.ok(buttons[1].classList.contains('incorrect'));
+  assert.ok(buttons[1].classList.contains('selected'));
+  assert.equal(buttons[1].querySelector('.checkbox-icon')?.textContent, '✕');
+
+  // C: correct & missed -> .missed with '✓'
+  assert.ok(buttons[2].classList.contains('missed'));
+  assert.ok(!buttons[2].classList.contains('selected'));
+  assert.equal(buttons[2].querySelector('.checkbox-icon')?.textContent, '✓');
+
+  // D: incorrect & unselected -> empty checkbox icon
+  assert.equal(buttons[3].querySelector('.checkbox-icon')?.textContent, '');
+});

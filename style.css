@@ -1474,7 +1474,9 @@ progress.exam-progress,
     background: var(--correct-bg);
 }
 .option-btn.correct .option-letter,
-.option-btn.correct .checkbox-icon {
+.option-btn.correct .checkbox-icon,
+.option-btn.missed .option-letter,
+.option-btn.missed .checkbox-icon {
     background: var(--correct);
     border-color: var(--correct);
     color: #06281e;
@@ -1493,10 +1495,11 @@ progress.exam-progress,
     border: 2px dashed var(--correct);
     background: var(--correct-bg);
 }
-.option-btn.missed .option-letter {
-    background: var(--correct);
-    border-color: var(--correct);
-    color: #06281e;
+[data-theme="light"] .option-btn.correct .option-letter,
+[data-theme="light"] .option-btn.correct .checkbox-icon,
+[data-theme="light"] .option-btn.missed .option-letter,
+[data-theme="light"] .option-btn.missed .checkbox-icon {
+    color: #ffffff;
 }
 .option-btn:disabled {
     cursor: default;

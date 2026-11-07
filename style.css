@@ -462,17 +462,20 @@ dialog::backdrop {
 }
 
 /* ===== MODE SCREEN ===== */
-.mode-layout { width: 100%; max-width: 520px; padding: 20px; }
-.mode-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 36px; }
+.mode-layout { width: 100%; max-width: 720px; padding: 16px; box-sizing: border-box; }
+.mode-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
 .mode-cards { display: flex; flex-direction: column; gap: 12px; }
 .mode-card {
     display: flex; align-items: center; gap: 16px;
-    padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border);
+    min-height: 48px; padding: 12px 16px; border-radius: var(--radius-lg); border: 1px solid var(--border);
     background: var(--bg-raised); cursor: pointer; text-align: left;
-    font-family: var(--font); transition: all var(--transition); width: 100%;
+    font-family: var(--font); color: var(--text-primary); transition: all var(--transition); width: 100%;
+    box-sizing: border-box;
 }
-.mode-card:hover { border-color: var(--border-hover); background: var(--bg-element); transform: translateX(4px); }
-.mode-card:hover .mode-arrow { opacity: 1; transform: translateX(2px); }
+.mode-card:hover { border-color: var(--border-hover); background: var(--bg-element); transform: none; }
+@media (min-width: 768px) {
+  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; }
+}
 
 .mode-icon { width: 44px; height: 44px; border-radius: var(--radius-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .study-icon { background: rgba(99,102,241,0.1); color: var(--accent); }
@@ -481,7 +484,6 @@ dialog::backdrop {
 .mode-info { flex: 1; }
 .mode-info h3 { margin-bottom: 4px; }
 .mode-info p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.45; margin: 0; }
-.mode-arrow { color: var(--text-tertiary); opacity: 0.3; flex-shrink: 0; transition: all var(--transition); }
 
 /* ===== EXAM SCREEN ===== */
 .exam-layout { width: 100%; max-width: 640px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; padding: 20px; }

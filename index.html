@@ -147,8 +147,9 @@
     <main id="mode-screen" class="screen" hidden>
         <div class="mode-layout">
             <div class="mode-header">
-                <button class="back-btn" id="back-to-upload">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <button type="button" class="nav-btn" id="back-to-upload" aria-label="Volver a Mis tests">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                    Volver
                 </button>
                 <div>
                     <h2>¿Cómo quieres estudiar?</h2>
@@ -157,26 +158,24 @@
             </div>
 
             <div class="mode-cards">
-                <button class="mode-card" data-mode="study" id="mode-study">
-                    <div class="mode-icon study-icon">
+                <button type="button" class="mode-card" data-mode="study" id="mode-study">
+                    <div class="mode-icon study-icon" aria-hidden="true">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                     </div>
                     <div class="mode-info">
                         <h3>Modo Estudio</h3>
-                        <p>Feedback inmediato tras cada respuesta. Ideal para aprender de tus errores con ayuda de la IA.</p>
+                        <p>Feedback inmediato tras cada respuesta.</p>
                     </div>
-                    <svg class="mode-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
 
-                <button class="mode-card" data-mode="exam" id="mode-exam">
-                    <div class="mode-icon exam-icon">
+                <button type="button" class="mode-card" data-mode="exam" id="mode-exam">
+                    <div class="mode-icon exam-icon" aria-hidden="true">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                     </div>
                     <div class="mode-info">
                         <h3>Modo Examen</h3>
-                        <p>Responde todo sin interrupciones. Evalúa tus resultados y revisa errores al final.</p>
+                        <p>Responde todo y revisa al final.</p>
                     </div>
-                    <svg class="mode-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
             </div>
         </div>

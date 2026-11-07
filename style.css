@@ -315,22 +315,37 @@ textarea { min-height: 6rem; resize: vertical; }
 .library-group { font-size: 0.95rem; margin: 4px 0 8px; }
 .library-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 dialog:modal { overscroll-behavior: contain; }
-dialog::backdrop { overscroll-behavior: contain; }
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
 .repo-checkbox { accent-color: var(--accent); transform: scale(1.1); }
 
 /* ===== MODAL ===== */
 .modal {
-    border: none; background: transparent; padding: 0;
-    max-width: 600px; width: 90%;
-    position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    margin: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  box-sizing: border-box;
+  width: min(32rem, calc(100vw - 32px));
+  max-width: min(32rem, calc(100vw - 32px));
+  height: fit-content;
+  max-height: min(90dvh, 40rem);
+  overflow: auto;
+  transform: none;
+  margin: auto;
 }
-.modal::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
 .modal-content {
-    background: var(--bg-raised); border: 1px solid var(--border);
-    border-radius: var(--radius-xl); padding: 32px; color: var(--text-primary);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  color: var(--text-primary);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 [data-theme="light"] .modal-content { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }

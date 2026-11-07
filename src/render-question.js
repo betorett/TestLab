@@ -102,14 +102,14 @@ export function renderQuestion(container, question, answer, ctx) {
   }
   container.append(headerMeta);
 
-  appendImage(container, question);
-
   if (question.type === 'FILL_BLANK') renderBlanks(container, question, answer, ctx);
   else {
     const promptEl = el(doc, 'p', 'question-text', question.prompt);
     promptEl.id = `${ctx.idPrefix}-prompt`;
     container.append(promptEl);
   }
+
+  appendImage(container, question);
 
   switch (question.type) {
     case 'SINGLE':

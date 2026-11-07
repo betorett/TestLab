@@ -1368,15 +1368,30 @@ progress.exam-progress,
     color: var(--text-secondary);
 }
 .question-figure {
-    margin: 0 0 18px;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
 }
 .question-image {
     display: block;
     max-width: 100%;
+    max-height: 220px;
+    width: auto;
     height: auto;
+    object-fit: contain;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    background: var(--bg-raised);
+    background: #ffffff;
+    padding: 8px;
+    box-shadow: var(--shadow-sm);
+}
+@media (max-width: 480px) {
+    .question-image {
+        max-height: 180px;
+        padding: 6px;
+    }
 }
 .question-text {
     font-size: 1.125rem;

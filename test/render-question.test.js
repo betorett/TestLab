@@ -35,6 +35,14 @@ test('a safe image is shown with its alternative text', () => {
   const image = root.querySelector('img');
   assert.equal(image.getAttribute('src'), 'examples/figura.svg');
   assert.equal(image.alt, 'Esquema del hielo');
+  const promptEl = root.querySelector('.question-text');
+  const figureEl = root.querySelector('figure.question-figure');
+  assert.ok(promptEl && figureEl);
+  const children = Array.from(root.children);
+  assert.ok(
+    children.indexOf(promptEl) < children.indexOf(figureEl),
+    'prompt must precede image in DOM order'
+  );
   const radios = [...root.querySelectorAll('input[type="radio"]')];
   assert.equal(radios.length, 2);
   assert.equal(new Set(radios.map((radio) => radio.name)).size, 1);

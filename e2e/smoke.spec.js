@@ -54,8 +54,11 @@ test('JSON bank walks all eight types, keyboard controls, and an import error', 
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
   const down = page.getByRole('button', { name: 'Bajar Planificar' });
-  await down.focus();
-  await expect(down).toBeFocused();
+  const moveBtn = (await down.isDisabled())
+    ? page.getByRole('button', { name: 'Subir Planificar' })
+    : down;
+  await moveBtn.focus();
+  await expect(moveBtn).toBeFocused();
   await page.keyboard.press('Space');
   await page.getByRole('button', { name: 'Comprobar', exact: true }).click();
   await expect(page.locator('.answer-status')).toHaveText('Respuesta incorrecta');

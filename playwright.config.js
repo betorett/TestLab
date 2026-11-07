@@ -8,10 +8,11 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4173',
     ignoreHTTPSErrors: true,
-    ...devices['Desktop Chrome']
+    ...devices['Desktop Chrome'],
+    ...(process.platform === 'win32' ? { channel: 'chrome' } : {})
   },
   webServer: {
-    command: './node_modules/.bin/serve -l 4173 .',
+    command: 'npx serve -l 4173 .',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: false
   }

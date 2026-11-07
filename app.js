@@ -3,7 +3,7 @@ import { PAPA_OPTIONS, parseCsvMatrix } from './src/csv-bank.js';
 import { gradeQuestion } from './src/grade.js';
 import { importBankText } from './src/import-bank.js';
 import { createLibrary } from './src/library.js';
-import { describeAttempt } from './src/report.js';
+import { describeAttempt, formatReference } from './src/report.js';
 import { renderLibrary } from './src/render-library.js';
 import { renderQuestion } from './src/render-question.js';
 import { scoreExam } from './src/score.js';
@@ -15,6 +15,7 @@ let optionOrders = [];
 let mode = null;
 let currentIndex = 0;
 let userAnswers = [];
+let checkedQuestions = [];
 let isReviewing = false;
 let isAnswerChecked = false;
 let penaltyFactor = 0.33;
@@ -22,6 +23,7 @@ let currentExamId = '';
 let currentFolderId = null;
 let pendingDelete = null;
 let libraryDialogAction = null;
+let dragDepth = 0;
 
 const $ = (id) => document.getElementById(id);
 const repository = createLibrary(localStorage);
@@ -36,6 +38,7 @@ const screens = {
   results: $('results-screen')
 };
 const ui = {
+  globalDropOverlay: $('global-drop-overlay'),
   dropZone: $('drop-zone'),
   fileInput: $('file-input'),
   importDialog: $('import-dialog'),
@@ -43,6 +46,7 @@ const ui = {
   chooseFilesBtn: $('choose-files-btn'),
   closeImportDialog: $('close-import-dialog'),
   libraryTitle: $('library-title'),
+  libraryStats: $('library-stats'),
   pasteInput: $('paste-input'),
   loadPasteBtn: $('load-paste-btn'),
   selectAllBtn: $('select-all-btn'),
@@ -65,9 +69,12 @@ const ui = {
   deleteDialogText: $('delete-dialog-text'),
   importErrors: $('import-errors'),
   backToUpload: $('back-to-upload'),
+  activeBankTitle: $('active-bank-title'),
   questionCountLabel: $('question-count-label'),
   modeStudy: $('mode-study'),
   modeExam: $('mode-exam'),
+  examModeBadge: $('exam-mode-badge'),
+  questionMap: $('question-map'),
   questionContainer: $('question-container'),
   questionStatus: $('question-status'),
   counter: $('question-counter'),
@@ -83,6 +90,8 @@ const ui = {
   scoreText: $('final-score'),
   scoreMessage: $('score-message'),
   scoreDetail: $('score-detail'),
+  resultsBreakdown: $('results-breakdown'),
+  retryBtn: $('retry-btn'),
   reviewBtn: $('review-btn'),
   generateReportBtn: $('generate-report-btn'),
   restartBtn: $('restart-btn'),
@@ -177,10 +186,16 @@ function init() {
   });
 
   ui.importBtn.addEventListener('click', () => ui.importDialog.showModal());
-  ui.chooseFilesBtn.addEventListener('click', () => ui.fileInput.click());
+  ui.chooseFilesBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    ui.fileInput.click();
+  });
   ui.closeImportDialog.addEventListener('click', () => ui.importDialog.close());
 
-  ui.dropZone.addEventListener('click', () => ui.fileInput.click());
+  ui.dropZone.addEventListener('click', (event) => {
+    if (event.target.closest('button')) return;
+    ui.fileInput.click();
+  });
   ui.fileInput.addEventListener('change', (event) => {
     if (event.target.files.length) handleMultipleFiles(event.target.files);
   });
@@ -196,6 +211,8 @@ function init() {
     ui.dropZone.classList.remove('dragover');
     if (event.dataTransfer.files.length) handleMultipleFiles(event.dataTransfer.files);
   });
+
+  initGlobalDragAndDrop();
 
   ui.pasteInput.addEventListener('input', () => {
     ui.loadPasteBtn.disabled = ui.pasteInput.value.trim() === '';
@@ -218,6 +235,15 @@ function init() {
   ui.deleteSelectedBtn.addEventListener('click', deleteSelectedExams);
   ui.historyList.addEventListener('click', onLibraryClick);
 
+  document.addEventListener('click', (event) => {
+    const openMenus = ui.historyList.querySelectorAll('details.library-menu[open]');
+    openMenus.forEach((menu) => {
+      if (!menu.contains(event.target)) menu.removeAttribute('open');
+    });
+  });
+
+  document.addEventListener('keydown', onGlobalKeyDown);
+
   ui.backToUpload.addEventListener('click', () => showScreen('upload'));
   ui.modeStudy.addEventListener('click', () => { mode = 'study'; startExam(); });
   ui.modeExam.addEventListener('click', () => { mode = 'exam'; startExam(); });
@@ -228,10 +254,163 @@ function init() {
   ui.checkMultipleBtn.addEventListener('click', checkAnswers);
   ui.submitBtn.addEventListener('click', finishExam);
   ui.quitBtn.addEventListener('click', resetApp);
-  ui.reviewBtn.addEventListener('click', startReview);
+  ui.retryBtn?.addEventListener('click', () => {
+    if (!questions.length) return;
+    mode = mode || 'study';
+    startExam();
+  });
+  ui.reviewBtn.addEventListener('click', () => startReview(0));
   ui.restartBtn.addEventListener('click', resetApp);
   ui.generateReportBtn.addEventListener('click', generateFinalReport);
   renderHistory();
+}
+
+function initGlobalDragAndDrop() {
+  window.addEventListener('dragenter', (event) => {
+    if (screens.upload.hasAttribute('hidden') || ui.importDialog.open) return;
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    event.preventDefault();
+    dragDepth += 1;
+    ui.globalDropOverlay?.removeAttribute('hidden');
+  });
+
+  window.addEventListener('dragover', (event) => {
+    if (screens.upload.hasAttribute('hidden') || ui.importDialog.open) return;
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    event.preventDefault();
+  });
+
+  window.addEventListener('dragleave', (event) => {
+    if (screens.upload.hasAttribute('hidden') || ui.importDialog.open) return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0 || event.relatedTarget === null) {
+      dragDepth = 0;
+      ui.globalDropOverlay?.setAttribute('hidden', '');
+    }
+  });
+
+  window.addEventListener('drop', (event) => {
+    if (screens.upload.hasAttribute('hidden') || ui.importDialog.open) return;
+    dragDepth = 0;
+    ui.globalDropOverlay?.setAttribute('hidden', '');
+    if (!event.dataTransfer?.files?.length) return;
+    event.preventDefault();
+    if (currentFolderId && !ui.importFolder.value) {
+      ui.importFolder.value = currentFolderId;
+    }
+    handleMultipleFiles(event.dataTransfer.files);
+  });
+}
+
+function anyDialogOpen() {
+  return Boolean(document.querySelector('dialog[open]'));
+}
+
+function isEditableTarget(target) {
+  if (!target || !(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    const type = target.getAttribute('type');
+    return type !== 'radio' && type !== 'checkbox';
+  }
+  return target.isContentEditable;
+}
+
+function onGlobalKeyDown(event) {
+  if (event.key === 'Escape') {
+    const openMenus = [...ui.historyList.querySelectorAll('details.library-menu[open]')];
+    if (openMenus.length && !anyDialogOpen()) {
+      openMenus.forEach((menu) => {
+        if (menu.contains(document.activeElement)) {
+          menu.querySelector('summary')?.focus();
+        }
+        menu.removeAttribute('open');
+      });
+      return;
+    }
+  }
+
+  if (anyDialogOpen()) return;
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+  if (!screens.mode.hasAttribute('hidden')) {
+    if (event.key === '1') {
+      event.preventDefault();
+      mode = 'study';
+      startExam();
+    } else if (event.key === '2') {
+      event.preventDefault();
+      mode = 'exam';
+      startExam();
+    }
+    return;
+  }
+
+  if (screens.exam.hasAttribute('hidden')) return;
+  if (isEditableTarget(event.target)) return;
+
+  if (event.key === 'Enter') {
+    if (!ui.checkMultipleBtn.classList.contains('hidden') && !ui.checkMultipleBtn.disabled) {
+      event.preventDefault();
+      ui.checkMultipleBtn.click();
+      return;
+    }
+    if (!ui.nextBtn.classList.contains('hidden') && !ui.nextBtn.disabled) {
+      event.preventDefault();
+      ui.nextBtn.click();
+      return;
+    }
+    if (!ui.submitBtn.classList.contains('hidden') && !ui.submitBtn.disabled) {
+      event.preventDefault();
+      ui.submitBtn.click();
+      return;
+    }
+  }
+
+  if (event.key === 'ArrowLeft' && !ui.prevBtn.classList.contains('hidden')) {
+    event.preventDefault();
+    prevQuestion();
+    return;
+  }
+  if (event.key === 'ArrowRight' && !ui.nextBtn.classList.contains('hidden')) {
+    event.preventDefault();
+    nextQuestion();
+    return;
+  }
+
+  const question = questions[currentIndex];
+  const answer = userAnswers[currentIndex];
+  if (!question) return;
+
+  if (!shouldReveal(question, answer)) {
+    if (question.type === 'SINGLE' || question.type === 'MULTIPLE') {
+      const choices = question.body.choices;
+      let choiceIndex = -1;
+      if (/^[1-9]$/.test(event.key)) {
+        choiceIndex = Number.parseInt(event.key, 10) - 1;
+      } else if (/^[a-iA-I]$/.test(event.key)) {
+        const upper = event.key.toUpperCase();
+        choiceIndex = choices.findIndex((c) => c.id.toUpperCase() === upper);
+        if (choiceIndex === -1) {
+          choiceIndex = upper.charCodeAt(0) - 65;
+        }
+      }
+      if (choiceIndex >= 0 && choiceIndex < choices.length) {
+        event.preventDefault();
+        const buttons = ui.questionContainer.querySelectorAll('.option-btn');
+        buttons[choiceIndex]?.click();
+      }
+    } else if (question.type === 'TRUE_FALSE') {
+      const lower = event.key.toLowerCase();
+      if (lower === 'v' || lower === '1') {
+        event.preventDefault();
+        onAnswer(['V']);
+      } else if (lower === 'f' || lower === '2') {
+        event.preventDefault();
+        onAnswer(['F']);
+      }
+    }
+  }
 }
 
 function toggleTheme() {
@@ -333,13 +512,29 @@ function startExam() {
   isReviewing = false;
   isAnswerChecked = false;
   userAnswers = questions.map((question) => blankAnswer(question));
+  checkedQuestions = questions.map(() => false);
   optionOrders = questions.map((question) => (
     question.type === 'MATCHING'
       ? shuffleItems(question.body.pairs.map((pair) => pair.right))
       : null
   ));
+  updateExamModeBadge();
   showScreen('exam');
   renderCurrent();
+}
+
+function updateExamModeBadge() {
+  if (!ui.examModeBadge) return;
+  if (isReviewing) {
+    ui.examModeBadge.textContent = 'Revisión';
+    ui.examModeBadge.dataset.mode = 'review';
+  } else if (mode === 'exam') {
+    ui.examModeBadge.textContent = 'Modo Examen';
+    ui.examModeBadge.dataset.mode = 'exam';
+  } else {
+    ui.examModeBadge.textContent = 'Modo Estudio';
+    ui.examModeBadge.dataset.mode = 'study';
+  }
 }
 
 function shouldReveal(question, answer) {
@@ -352,6 +547,72 @@ function shouldReveal(question, answer) {
   return isAnswerChecked;
 }
 
+function renderQuestionMap() {
+  if (!ui.questionMap) return;
+  ui.questionMap.replaceChildren();
+  if (questions.length <= 1) {
+    ui.questionMap.classList.add('hidden');
+    return;
+  }
+  ui.questionMap.classList.remove('hidden');
+  questions.forEach((question, index) => {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'question-pill';
+    pill.textContent = String(index + 1);
+    const ans = userAnswers[index];
+    const attempted = countsAsAnswered(question, ans);
+
+    if (index === currentIndex) {
+      pill.classList.add('pill-current');
+      pill.setAttribute('aria-current', 'step');
+    }
+
+    const revealed = isReviewing || (
+      mode === 'study' && (
+        ans === 'SKIPPED'
+        || ((question.type === 'SINGLE' || question.type === 'TRUE_FALSE') && attempted)
+        || checkedQuestions[index]
+        || (question.type === 'SHORT_ANSWER' && (ans?.verdict === 'correct' || ans?.verdict === 'incorrect'))
+      )
+    );
+
+    let statusDescription = 'sin responder';
+    if (revealed) {
+      const verdict = gradeQuestion(question, ans);
+      if (verdict === 'correct') {
+        pill.classList.add('pill-correct');
+        statusDescription = 'correcta';
+      } else if (verdict === 'incorrect') {
+        pill.classList.add('pill-incorrect');
+        statusDescription = 'incorrecta';
+      } else if (verdict === 'skipped') {
+        pill.classList.add('pill-skipped');
+        statusDescription = 'omitida';
+      } else {
+        pill.classList.add('pill-answered');
+        statusDescription = 'respondida';
+      }
+    } else if (attempted) {
+      pill.classList.add('pill-answered');
+      statusDescription = 'respondida';
+    }
+
+    const currentTag = index === currentIndex ? ', actual' : '';
+    pill.setAttribute('aria-label', `Pregunta ${index + 1} (${statusDescription}${currentTag})`);
+
+    const canJump = isReviewing || mode === 'exam' || index <= currentIndex || attempted;
+    pill.disabled = !canJump;
+    pill.addEventListener('click', () => {
+      if (index === currentIndex) return;
+      currentIndex = index;
+      isAnswerChecked = Boolean(checkedQuestions[index]);
+      renderCurrent();
+    });
+    ui.questionMap.append(pill);
+  });
+}
+
 function renderCurrent() {
   const question = questions[currentIndex];
   const answer = userAnswers[currentIndex];
@@ -359,6 +620,7 @@ function renderCurrent() {
   const answeredCount = userAnswers.filter((item, index) => countsAsAnswered(questions[index], item)).length;
   ui.examProgress.max = questions.length;
   ui.examProgress.value = answeredCount;
+  renderQuestionMap();
   const rendered = renderQuestion(ui.questionContainer, question, answer, {
     idPrefix: `q${currentIndex}`,
     reveal: shouldReveal(question, answer),
@@ -375,12 +637,15 @@ function onAnswer(next) {
   const index = currentIndex;
   const question = questions[index];
   userAnswers[index] = next;
-  if (question.type !== 'SINGLE' && question.type !== 'TRUE_FALSE') isAnswerChecked = false;
+  if (question.type !== 'SINGLE' && question.type !== 'TRUE_FALSE') {
+    isAnswerChecked = false;
+    checkedQuestions[index] = false;
+  }
   renderCurrent();
   if (mode === 'exam' && (question.type === 'SINGLE' || question.type === 'TRUE_FALSE')) {
     setTimeout(() => {
       if (currentIndex === index && currentIndex < questions.length - 1) nextQuestion();
-    }, 300);
+    }, 260);
   }
 }
 
@@ -410,7 +675,10 @@ function updateNavButtons() {
 
   if (isReviewing) {
     if (!isLast) ui.nextBtn.classList.remove('hidden');
-    else showSubmit('Volver a resultados', () => showScreen('results'));
+    else showSubmit('Volver a resultados', () => {
+      renderResultsBreakdown();
+      showScreen('results');
+    });
     return;
   }
   if (mode === 'exam') {
@@ -455,6 +723,7 @@ function skipQuestion() {
   const index = currentIndex;
   userAnswers[index] = 'SKIPPED';
   isAnswerChecked = true;
+  checkedQuestions[index] = true;
   renderCurrent();
   if (mode === 'exam') {
     setTimeout(() => {
@@ -465,7 +734,52 @@ function skipQuestion() {
 
 function checkAnswers() {
   isAnswerChecked = true;
+  checkedQuestions[currentIndex] = true;
   renderCurrent();
+}
+
+function renderResultsBreakdown() {
+  if (!ui.resultsBreakdown) return;
+  ui.resultsBreakdown.replaceChildren();
+  questions.forEach((question, index) => {
+    const attempt = describeAttempt(question, userAnswers[index]);
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = `breakdown-row breakdown-${attempt.status}`;
+    item.setAttribute('aria-label', `Revisar pregunta ${index + 1}: ${attempt.label}`);
+
+    const top = document.createElement('div');
+    top.className = 'breakdown-row-top';
+
+    const num = document.createElement('span');
+    num.className = 'breakdown-num';
+    num.textContent = `#${index + 1}`;
+
+    const badge = document.createElement('span');
+    badge.className = `breakdown-badge badge-${attempt.status}`;
+    badge.textContent = attempt.status === 'correct'
+      ? 'Correcta'
+      : attempt.status === 'incorrect'
+        ? 'Incorrecta'
+        : attempt.status === 'pending'
+          ? 'Pendiente'
+          : 'Omitida';
+
+    top.append(num, badge);
+
+    const promptP = document.createElement('p');
+    promptP.className = 'breakdown-prompt';
+    promptP.textContent = question.prompt;
+
+    const refP = document.createElement('p');
+    refP.className = 'breakdown-ref';
+    refP.textContent = `Solución: ${formatReference(question)}`;
+
+    item.append(top, promptP, refP);
+    item.addEventListener('click', () => startReview(index));
+    ui.resultsBreakdown.append(item);
+  });
+  renderMath(ui.resultsBreakdown);
 }
 
 function finishExam() {
@@ -478,18 +792,17 @@ function finishExam() {
   else ui.scoreMessage.textContent = 'Suspenso — Sigue practicando 💪';
   if (currentExamId) repository.updateScore(currentExamId, result.scoreLabel);
 
+  renderResultsBreakdown();
+
   const circumference = 2 * Math.PI * 52;
-  showScreen('loading');
-  setTimeout(() => {
-    showScreen('results');
+  showScreen('results');
+  requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const fill = (Math.max(0, result.scoreOutOf10) / 10) * circumference;
-        ui.scoreRing.style.strokeDasharray = `${fill} ${circumference}`;
-        ui.scoreRing.style.stroke = result.scoreOutOf10 < 5 ? 'var(--incorrect)' : 'var(--accent)';
-      });
+      const fill = (Math.max(0, result.scoreOutOf10) / 10) * circumference;
+      ui.scoreRing.style.strokeDasharray = `${fill} ${circumference}`;
+      ui.scoreRing.style.stroke = result.scoreOutOf10 < 5 ? 'var(--incorrect)' : 'var(--accent)';
     });
-  }, 1500);
+  });
 }
 
 function generateFinalReport() {
@@ -545,7 +858,22 @@ function renderHistory() {
   } else {
     ui.libraryTitle.removeAttribute('aria-current');
   }
+  if (ui.libraryStats) {
+    const folderCount = view.folders?.length || 0;
+    const testCount = view.tests?.length || 0;
+    if (folderCount === 0 && testCount === 0) {
+      ui.libraryStats.textContent = 'Sin bancos en este nivel · Arrastra archivos aquí o pulsa Importar test';
+    } else {
+      const parts = [];
+      if (folderCount > 0) parts.push(countLabel(folderCount, 'carpeta', 'carpetas'));
+      if (testCount > 0) parts.push(countLabel(testCount, 'test', 'tests'));
+      ui.libraryStats.textContent = parts.join(' · ');
+    }
+  }
   renderLibrary(ui.historyList, view);
+  const currentCrumb = ui.historyList.querySelector('.library-breadcrumbs [aria-current="page"]');
+  currentCrumb?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' });
+
   fillSelect(ui.importFolder, repository.listFolders(), 'Sin clasificar');
   ui.librarySort.value = view.sort;
   ui.historyList.querySelectorAll('.repo-checkbox').forEach((box) => {
@@ -647,6 +975,20 @@ function onLibraryClick(event) {
     loadFromHistory(id);
     return;
   }
+  if (button.dataset.action === 'quick-study') {
+    if (prepareExamFromHistory(id)) {
+      mode = 'study';
+      startExam();
+    }
+    return;
+  }
+  if (button.dataset.action === 'quick-exam') {
+    if (prepareExamFromHistory(id)) {
+      mode = 'exam';
+      startExam();
+    }
+    return;
+  }
   if (button.dataset.action === 'rename-test') {
     renameHistory(id);
     return;
@@ -728,8 +1070,8 @@ function onLibraryClick(event) {
 }
 
 function updateDeleteBtnVisibility() {
-  const selected = ui.historyList.querySelectorAll('.repo-checkbox:checked').length > 0;
-  ui.deleteSelectedBtn.classList.toggle('hidden', !selected);
+  const selectedCount = ui.historyList.querySelectorAll('.repo-checkbox:checked').length;
+  ui.deleteSelectedBtn.classList.toggle('hidden', selectedCount === 0);
 }
 
 function selectAllExams() {
@@ -748,29 +1090,45 @@ function deleteSelectedExams() {
   ui.deleteDialog.showModal();
 }
 
-function loadFromHistory(id) {
+function prepareExamFromHistory(id) {
   const item = repository.getTest(id);
-  if (!item) return;
+  if (!item) return false;
   currentExamId = id;
   questions = item.questions.map(coerceStoredQuestion);
+  if (ui.activeBankTitle) ui.activeBankTitle.textContent = item.name;
   ui.questionCountLabel.textContent = `${questions.length} preguntas pre-cargadas`;
+  return true;
+}
+
+function loadFromHistory(id) {
+  if (!prepareExamFromHistory(id)) return;
   showScreen('mode');
 }
 
 function renameHistory(id) {
   const item = repository.getTest(id);
   if (!item) return;
-  const newName = prompt('Introduce un nuevo nombre para este banco de preguntas:', item.name);
-  if (!newName || !newName.trim()) return;
-  repository.renameTest(id, newName);
-  renderHistory();
-  showToast('Nombre actualizado');
+  openLibraryDialog({
+    title: 'Renombrar test',
+    confirmLabel: 'Guardar',
+    showName: true,
+    showDest: false,
+    name: item.name,
+    onConfirm: ({ name }) => {
+      if (!name || !name.trim()) return;
+      repository.renameTest(id, name.trim());
+      renderHistory();
+      showToast('Nombre actualizado');
+    }
+  });
 }
 
-function startReview() {
+function startReview(initialIndex = 0) {
   isReviewing = true;
-  currentIndex = 0;
+  currentIndex = Math.max(0, Math.min(initialIndex, questions.length - 1));
   isAnswerChecked = true;
+  updateExamModeBadge();
+  ui.resultsBreakdown?.replaceChildren();
   showScreen('exam');
   renderCurrent();
 }
@@ -779,6 +1137,7 @@ function resetApp() {
   questions = [];
   optionOrders = [];
   userAnswers = [];
+  checkedQuestions = [];
   mode = null;
   isReviewing = false;
   isAnswerChecked = false;
@@ -788,6 +1147,7 @@ function resetApp() {
   ui.pasteInput.value = '';
   ui.loadPasteBtn.disabled = true;
   ui.scoreRing.style.strokeDasharray = '0 327';
+  ui.resultsBreakdown?.replaceChildren();
   showScreen('upload');
   renderHistory();
 }

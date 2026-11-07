@@ -3,6 +3,17 @@ import { normalizeAnswerText, normalizeUnit } from './text.js';
 
 const TEXT_TYPES = new Set(['FILL_BLANK', 'NUMERIC', 'SHORT_ANSWER']);
 
+const TYPE_LABELS = {
+  SINGLE: 'Selección única',
+  MULTIPLE: 'Opción múltiple',
+  TRUE_FALSE: 'Verdadero o falso',
+  FILL_BLANK: 'Rellenar huecos',
+  NUMERIC: 'Respuesta numérica',
+  MATCHING: 'Emparejar conceptos',
+  ORDERING: 'Ordenar secuencia',
+  SHORT_ANSWER: 'Respuesta corta'
+};
+
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
   if (className) node.className = className;
@@ -33,17 +44,20 @@ function canPreserveTextEntry(container, question, ctx) {
 }
 
 function syncStatus(container, question, answer, ctx) {
-  const text = statusText(question, answer, ctx);
+  const info = statusInfo(question, answer, ctx);
   const status = container.querySelector('.answer-status');
-  if (!text) {
+  if (!info.text) {
     status?.remove();
     return;
   }
   if (!status) {
-    container.append(el(container.ownerDocument, 'p', 'answer-status', text));
+    const node = el(container.ownerDocument, 'p', 'answer-status', info.text);
+    node.dataset.tone = info.tone;
+    container.append(node);
     return;
   }
-  if (status.textContent !== text) status.textContent = text;
+  if (status.textContent !== info.text) status.textContent = info.text;
+  status.dataset.tone = info.tone;
 }
 
 function syncShortVerdict(container, answer) {
@@ -67,6 +81,15 @@ export function renderQuestion(container, question, answer, ctx) {
 
   const doc = container.ownerDocument;
   container.replaceChildren();
+
+  const headerMeta = el(doc, 'div', 'question-header-meta');
+  const typeBadge = el(doc, 'span', 'question-type-badge', TYPE_LABELS[question.type] || question.type);
+  headerMeta.append(typeBadge);
+  if (question.type === 'MULTIPLE') {
+    headerMeta.append(el(doc, 'span', 'meta question-type-hint', 'Puedes elegir varias respuestas.'));
+  }
+  container.append(headerMeta);
+
   appendImage(container, question);
 
   if (question.type === 'FILL_BLANK') renderBlanks(container, question, answer, ctx);
@@ -74,10 +97,6 @@ export function renderQuestion(container, question, answer, ctx) {
     const promptEl = el(doc, 'p', 'question-text', question.prompt);
     promptEl.id = `${ctx.idPrefix}-prompt`;
     container.append(promptEl);
-  }
-
-  if (question.type === 'MULTIPLE') {
-    container.append(el(doc, 'p', 'meta', 'Puedes elegir varias respuestas.'));
   }
 
   switch (question.type) {
@@ -104,8 +123,12 @@ export function renderQuestion(container, question, answer, ctx) {
       break;
   }
 
-  const status = statusText(question, answer, ctx);
-  if (status) container.append(el(doc, 'p', 'answer-status', status));
+  const info = statusInfo(question, answer, ctx);
+  if (info.text) {
+    const statusNode = el(doc, 'p', 'answer-status', info.text);
+    statusNode.dataset.tone = info.tone;
+    container.append(statusNode);
+  }
   container.dataset.liveKey = TEXT_TYPES.has(question.type) ? liveKey(question, ctx) : '';
   container.dataset.revealed = ctx.reveal ? 'true' : 'false';
   return { preserved: false };
@@ -172,6 +195,7 @@ function renderTrueFalse(container, question, answer, ctx) {
   const selected = Array.isArray(answer) ? answer[0] : '';
   [['V', 'Verdadero'], ['F', 'Falso']].forEach(([value, label]) => {
     const id = `${ctx.idPrefix}-tf-${value}`;
+    const itemWrap = el(doc, 'div', 'true-false-item');
     const input = doc.createElement('input');
     input.type = 'radio';
     input.name = `${ctx.idPrefix}-tf`;
@@ -184,10 +208,17 @@ function renderTrueFalse(container, question, answer, ctx) {
     caption.htmlFor = id;
     if (ctx.reveal) {
       const expected = question.body.correct ? 'V' : 'F';
-      if (value === expected) caption.classList.add('is-correct');
-      if (selected === value && value !== expected) caption.classList.add('is-incorrect');
+      if (value === expected) {
+        caption.classList.add('is-correct');
+        itemWrap.classList.add('is-correct');
+      }
+      if (selected === value && value !== expected) {
+        caption.classList.add('is-incorrect');
+        itemWrap.classList.add('is-incorrect');
+      }
     }
-    field.append(input, caption);
+    itemWrap.append(input, caption);
+    field.append(itemWrap);
   });
   container.append(field);
 }
@@ -203,6 +234,7 @@ function renderBlanks(container, question, answer, ctx) {
     input.className = 'blank-input';
     input.autocomplete = 'off';
     input.spellcheck = false;
+    input.placeholder = `Hueco ${index + 1}`;
     input.value = values[index] || '';
     input.setAttribute('aria-label', `Hueco ${index + 1}`);
     if (ctx.reveal) {
@@ -219,33 +251,39 @@ function renderBlanks(container, question, answer, ctx) {
   });
 
   const markers = question.prompt.match(/_{3,}/g) || [];
-  const paragraph = el(doc, 'p', 'question-text');
+  const paragraph = el(doc, 'p', 'question-text question-text-blanks');
   if (markers.length === 0) {
     paragraph.textContent = question.prompt;
     container.append(paragraph);
+    const stack = el(doc, 'div', 'blanks-stack');
     inputs.forEach((input, index) => {
-      const label = el(doc, 'label', null, `Hueco ${index + 1}`);
+      const label = el(doc, 'label', 'blank-label', `Hueco ${index + 1}`);
       label.htmlFor = input.id;
       const row = el(doc, 'div', 'blank-row');
       row.append(label, input);
-      container.append(row);
+      stack.append(row);
     });
-    return;
+    container.append(stack);
+  } else {
+    const parts = question.prompt.split(/_{3,}/);
+    parts.forEach((part, index) => {
+      paragraph.append(doc.createTextNode(part));
+      if (inputs[index]) paragraph.append(inputs[index]);
+    });
+    container.append(paragraph);
   }
 
-  const parts = question.prompt.split(/_{3,}/);
-  parts.forEach((part, index) => {
-    paragraph.append(doc.createTextNode(part));
-    if (inputs[index]) paragraph.append(inputs[index]);
-  });
-  container.append(paragraph);
+  if (ctx.reveal && gradeQuestion(question, answer) !== 'correct') {
+    const expectedText = question.body.blanks.map((variants, i) => `Hueco ${i + 1}: ${variants.join(' / ')}`).join(' · ');
+    container.append(el(doc, 'p', 'model-answer', `Soluciones válidas — ${expectedText}`));
+  }
 }
 
 function renderNumeric(container, question, answer, ctx) {
   const doc = container.ownerDocument;
   const current = answer && typeof answer === 'object' ? answer : { value: '', unit: '' };
   const valueId = `${ctx.idPrefix}-value`;
-  const valueLabel = el(doc, 'label', null, 'Valor');
+  const valueLabel = el(doc, 'label', 'field-label', 'Valor');
   valueLabel.htmlFor = valueId;
   const value = doc.createElement('input');
   value.type = 'text';
@@ -253,8 +291,9 @@ function renderNumeric(container, question, answer, ctx) {
   value.inputMode = 'decimal';
   value.autocomplete = 'off';
   value.spellcheck = false;
+  value.placeholder = 'Ej. 9,81';
   value.value = current.value || '';
-  const hint = el(doc, 'p', 'meta', `Tolerancia absoluta ±${question.body.tolerance}. Usa coma o punto decimal.`);
+  const hint = el(doc, 'p', 'meta numeric-hint', `Tolerancia absoluta ±${question.body.tolerance}. Usa coma o punto decimal.`);
   hint.id = `${ctx.idPrefix}-hint`;
   value.setAttribute('aria-describedby', hint.id);
   let unit = null;
@@ -265,19 +304,26 @@ function renderNumeric(container, question, answer, ctx) {
   value.addEventListener('input', publishNumeric);
 
   const group = el(doc, 'div', 'numeric-fields');
-  group.append(valueLabel, value, hint);
+  const grid = el(doc, 'div', 'numeric-grid');
+  const valCol = el(doc, 'div', 'numeric-col');
+  valCol.append(valueLabel, value);
+  grid.append(valCol);
+
   if (question.body.unit) {
     const unitId = `${ctx.idPrefix}-unit`;
-    const unitLabel = el(doc, 'label', null, `Unidad (${question.body.unit})`);
+    const unitLabel = el(doc, 'label', 'field-label', `Unidad (${question.body.unit})`);
     unitLabel.htmlFor = unitId;
     unit = doc.createElement('input');
     unit.type = 'text';
     unit.id = unitId;
     unit.autocomplete = 'off';
     unit.spellcheck = false;
+    unit.placeholder = question.body.unit;
     unit.value = current.unit || '';
     unit.addEventListener('input', publishNumeric);
-    group.append(unitLabel, unit);
+    const unitCol = el(doc, 'div', 'numeric-col');
+    unitCol.append(unitLabel, unit);
+    grid.append(unitCol);
     if (ctx.reveal) {
       const matches = normalizeUnit(unit.value) === normalizeUnit(question.body.unit);
       unit.disabled = true;
@@ -286,7 +332,13 @@ function renderNumeric(container, question, answer, ctx) {
   }
   if (ctx.reveal) {
     value.disabled = true;
-    value.classList.add(gradeQuestion(question, { value: value.value, unit: current.unit || '' }) === 'correct' ? 'is-correct' : 'is-incorrect');
+    const isOk = gradeQuestion(question, { value: value.value, unit: current.unit || '' }) === 'correct';
+    value.classList.add(isOk ? 'is-correct' : 'is-incorrect');
+  }
+  group.append(grid, hint);
+  if (ctx.reveal && gradeQuestion(question, current) !== 'correct') {
+    const unitSuffix = question.body.unit ? ` ${question.body.unit}` : '';
+    group.append(el(doc, 'p', 'model-answer', `Valor esperado: ${question.body.value} (±${question.body.tolerance})${unitSuffix}`));
   }
   container.append(group);
 }
@@ -296,11 +348,11 @@ function renderMatching(container, question, answer, ctx) {
   const selections = Array.isArray(answer) ? answer : question.body.pairs.map(() => '');
   const rights = ctx.optionOrder || question.body.pairs.map((pair) => pair.right);
   const field = el(doc, 'fieldset', 'matching');
-  field.append(el(doc, 'legend', null, 'Emparejamientos'));
+  field.append(el(doc, 'legend', 'matching-legend', 'Emparejamientos'));
   question.body.pairs.forEach((pair, index) => {
     const id = `${ctx.idPrefix}-match-${index}`;
     const row = el(doc, 'div', 'matching-row');
-    const label = el(doc, 'label', null, pair.left);
+    const label = el(doc, 'label', 'matching-left', pair.left);
     label.htmlFor = id;
     const select = doc.createElement('select');
     select.id = id;
@@ -317,7 +369,9 @@ function renderMatching(container, question, answer, ctx) {
     select.value = selections[index] || '';
     if (ctx.reveal) {
       select.disabled = true;
-      select.classList.add(selections[index] === pair.right ? 'is-correct' : 'is-incorrect');
+      const isOk = selections[index] === pair.right;
+      select.classList.add(isOk ? 'is-correct' : 'is-incorrect');
+      row.classList.add(isOk ? 'is-correct' : 'is-incorrect');
     }
     select.addEventListener('change', () => {
       const next = selections.slice();
@@ -338,28 +392,36 @@ function renderOrdering(container, question, answer, ctx) {
   const list = el(doc, 'ol', 'ordering-list');
   state.order.forEach((item, index) => {
     const itemNode = el(doc, 'li', 'ordering-item');
-    itemNode.append(el(doc, 'span', 'ordering-label', item));
-    const up = el(doc, 'button', 'nav-btn', 'Subir');
+    if (ctx.reveal) {
+      itemNode.classList.add(question.body.items[index] === item ? 'is-correct' : 'is-incorrect');
+    }
+    const stepBadge = el(doc, 'span', 'ordering-index', String(index + 1));
+    stepBadge.setAttribute('aria-hidden', 'true');
+    itemNode.append(stepBadge, el(doc, 'span', 'ordering-label', item));
+
+    const controls = el(doc, 'div', 'ordering-controls');
+    const up = el(doc, 'button', 'nav-btn ordering-move-btn', 'Subir');
     up.type = 'button';
     up.disabled = index === 0 || Boolean(ctx.reveal);
     up.setAttribute('aria-label', `Subir ${item}`);
-    const down = el(doc, 'button', 'nav-btn', 'Bajar');
+    const down = el(doc, 'button', 'nav-btn ordering-move-btn', 'Bajar');
     down.type = 'button';
     down.disabled = index === state.order.length - 1 || Boolean(ctx.reveal);
     down.setAttribute('aria-label', `Bajar ${item}`);
     up.addEventListener('click', () => ctx.onAnswer({ order: move(state.order, index, index - 1), confirmed: true }));
     down.addEventListener('click', () => ctx.onAnswer({ order: move(state.order, index, index + 1), confirmed: true }));
-    itemNode.append(up, down);
+    controls.append(up, down);
+    itemNode.append(controls);
     list.append(itemNode);
   });
   container.append(list);
-  const confirm = el(doc, 'button', 'nav-btn', 'Confirmar este orden');
+  const confirm = el(doc, 'button', `nav-btn ordering-confirm-btn${state.confirmed ? ' is-confirmed' : ''}`, 'Confirmar este orden');
   confirm.type = 'button';
   confirm.disabled = Boolean(ctx.reveal);
   confirm.addEventListener('click', () => ctx.onAnswer({ order: state.order.slice(), confirmed: true }));
   container.append(confirm);
   if (ctx.reveal && gradeQuestion(question, state) !== 'correct') {
-    container.append(el(doc, 'p', 'meta', `Orden correcto: ${question.body.items.join(' → ')}`));
+    container.append(el(doc, 'p', 'model-answer', `Orden correcto: ${question.body.items.join(' → ')}`));
   }
 }
 
@@ -367,11 +429,12 @@ function renderShort(container, question, answer, ctx) {
   const doc = container.ownerDocument;
   const current = answer && typeof answer === 'object' ? answer : { text: '', verdict: null };
   const id = `${ctx.idPrefix}-short`;
-  const label = el(doc, 'label', null, 'Tu respuesta');
+  const label = el(doc, 'label', 'field-label', 'Tu respuesta');
   label.htmlFor = id;
   const area = doc.createElement('textarea');
   area.id = id;
   area.rows = 4;
+  area.placeholder = 'Escribe aquí tu desarrollo antes de compararlo con la respuesta modelo…';
   area.value = current.text || '';
   const locked = Boolean(ctx.reveal);
   area.readOnly = locked;
@@ -385,11 +448,11 @@ function renderShort(container, question, answer, ctx) {
   const model = el(doc, 'p', 'model-answer');
   const modelLabel = el(doc, 'span', 'model-label', 'Respuesta modelo: ');
   model.append(modelLabel, doc.createTextNode(question.body.modelAnswer));
-  const correct = el(doc, 'button', 'nav-btn', 'La he acertado');
+  const correct = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he acertado');
   correct.type = 'button';
   correct.disabled = locked;
   correct.setAttribute('aria-pressed', String(current.verdict === 'correct'));
-  const incorrect = el(doc, 'button', 'nav-btn', 'La he fallado');
+  const incorrect = el(doc, 'button', 'nav-btn short-verdict-btn', 'La he fallado');
   incorrect.type = 'button';
   incorrect.disabled = locked;
   incorrect.setAttribute('aria-pressed', String(current.verdict === 'incorrect'));
@@ -413,24 +476,33 @@ function move(items, from, to) {
   return next;
 }
 
-function statusText(question, answer, ctx) {
+function statusInfo(question, answer, ctx) {
   if (question.type === 'SHORT_ANSWER') {
     const text = String(answer?.text ?? '').trim();
     if (!text || (answer?.verdict !== 'correct' && answer?.verdict !== 'incorrect')) {
-      return text
-        ? 'Pendiente de autoevaluación. No se puntúa automáticamente.'
-        : 'La respuesta corta no se corrige sola. Pendiente de autoevaluación hasta que escribas y decidas.';
+      return {
+        tone: 'pending',
+        text: text
+          ? 'Pendiente de autoevaluación. No se puntúa automáticamente.'
+          : 'La respuesta corta no se corrige sola. Pendiente de autoevaluación hasta que escribas y decidas.'
+      };
     }
-    return answer.verdict === 'correct' ? 'Marcada como correcta' : 'Marcada como incorrecta';
+    return {
+      tone: answer.verdict === 'correct' ? 'correct' : 'incorrect',
+      text: answer.verdict === 'correct' ? 'Marcada como correcta' : 'Marcada como incorrecta'
+    };
   }
   if (question.type === 'ORDERING' && answer && !answer.confirmed && !ctx.reveal) {
-    return 'Confirma el orden para que cuente como respuesta.';
+    return {
+      tone: 'info',
+      text: 'Confirma el orden para que cuente como respuesta.'
+    };
   }
-  if (!ctx.reveal) return '';
+  if (!ctx.reveal) return { tone: '', text: '' };
   const status = gradeQuestion(question, answer);
-  if (status === 'correct') return 'Respuesta correcta';
-  if (status === 'incorrect') return 'Respuesta incorrecta';
-  if (status === 'pending') return 'Pendiente de autoevaluación. No se puntúa automáticamente.';
-  if (status === 'skipped') return 'Pregunta omitida';
-  return '';
+  if (status === 'correct') return { tone: 'correct', text: 'Respuesta correcta' };
+  if (status === 'incorrect') return { tone: 'incorrect', text: 'Respuesta incorrecta' };
+  if (status === 'pending') return { tone: 'pending', text: 'Pendiente de autoevaluación. No se puntúa automáticamente.' };
+  if (status === 'skipped') return { tone: 'skipped', text: 'Pregunta omitida' };
+  return { tone: '', text: '' };
 }

@@ -35,6 +35,10 @@ test('a safe image is shown with its alternative text', () => {
   const image = root.querySelector('img');
   assert.equal(image.getAttribute('src'), 'examples/figura.svg');
   assert.equal(image.alt, 'Esquema del hielo');
+  const trigger = root.querySelector('button.question-image-btn');
+  assert.ok(trigger, 'image must be wrapped in an expandable button');
+  assert.equal(trigger.getAttribute('aria-label'), 'Ampliar imagen: Esquema del hielo');
+  assert.equal(trigger.getAttribute('aria-haspopup'), 'dialog');
   const promptEl = root.querySelector('.question-text');
   const figureEl = root.querySelector('figure.question-figure');
   assert.ok(promptEl && figureEl);
@@ -184,6 +188,21 @@ test('single and multiple choices mark the chosen option semantically', () => {
   });
   assert.ok(tfRoot.querySelector('input[type="radio"]'));
   assert.equal(tfRoot.querySelector('.option-btn'), null);
+});
+
+test('revealed true-false applies correct/incorrect only to the outer item wrap and not inner label', () => {
+  const root = mount();
+  renderQuestion(root, base('TRUE_FALSE', { correct: true }), ['F'], {
+    idPrefix: 'tf',
+    reveal: true,
+    onAnswer() {}
+  });
+  const correctWrap = root.querySelector('.true-false-item.is-correct');
+  const incorrectWrap = root.querySelector('.true-false-item.is-incorrect');
+  assert.ok(correctWrap, 'correct option container must have is-correct');
+  assert.ok(incorrectWrap, 'incorrect option container must have is-incorrect');
+  const labelsWithState = root.querySelectorAll('label.is-correct, label.is-incorrect');
+  assert.equal(labelsWithState.length, 0, 'labels must not have is-correct or is-incorrect to prevent nested dark rectangles');
 });
 
 test('revealed single choice shows tick on correct option and cross on chosen wrong option', () => {

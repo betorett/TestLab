@@ -31,4 +31,11 @@ test('paste and files keep the chosen folder', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Empezar Dentro' })).toBeVisible();
   await page.locator('#import-btn').click();
   await expect(page.getByLabel('Guardar en')).toHaveValue(/.+/);
+  await page.locator('#paste-input').fill(JSON.stringify({
+    schemaVersion: 1,
+    title: 'Segundo en Fluidos',
+    questions: [{ type: 'SINGLE', prompt: '¿Segundo?', choices: [{ id: 'A', text: 'Sí' }, { id: 'B', text: 'No' }], answer: 'A' }]
+  }));
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
+  await expect(page.getByRole('button', { name: 'Empezar Segundo en Fluidos' })).toBeVisible();
 });

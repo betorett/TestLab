@@ -67,6 +67,9 @@ const ui = {
   libraryDialogClose: $('library-dialog-close'),
   deleteDialog: $('delete-dialog'),
   deleteDialogText: $('delete-dialog-text'),
+  imageModal: $('image-modal'),
+  imageModalContent: $('image-modal-content'),
+  closeImageModal: $('close-image-modal'),
   importErrors: $('import-errors'),
   backToUpload: $('back-to-upload'),
   activeBankTitle: $('active-bank-title'),
@@ -185,7 +188,16 @@ function init() {
     if (!inside) ui.aiModal.close();
   });
 
-  ui.importBtn.addEventListener('click', () => ui.importDialog.showModal());
+  ui.imageModal?.addEventListener('click', (event) => {
+    const rect = ui.imageModalContent?.getBoundingClientRect();
+    if (!rect) return;
+    const inside = event.clientY >= rect.top && event.clientY <= rect.bottom
+      && event.clientX >= rect.left && event.clientX <= rect.right;
+    if (!inside) ui.imageModal.close();
+  });
+  ui.closeImageModal?.addEventListener('click', () => ui.imageModal?.close());
+
+  ui.importBtn.addEventListener('click', openImportDialog);
   ui.chooseFilesBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     ui.fileInput.click();
@@ -900,7 +912,7 @@ function renderHistory() {
   const currentCrumb = ui.historyList.querySelector('.library-breadcrumbs [aria-current="page"]');
   currentCrumb?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' });
 
-  fillSelect(ui.importFolder, repository.listFolders(), 'Sin clasificar');
+  fillSelect(ui.importFolder, repository.listFolders(), 'Sin clasificar', currentFolderId || '');
   ui.librarySort.value = view.sort;
   ui.historyList.querySelectorAll('.repo-checkbox').forEach((box) => {
     box.addEventListener('change', updateDeleteBtnVisibility);
@@ -909,7 +921,7 @@ function renderHistory() {
   ui.selectAllBtn.classList.toggle('hidden', empty);
   if (empty) ui.deleteSelectedBtn.classList.add('hidden');
   else updateDeleteBtnVisibility();
-  ui.historyList.querySelector('#empty-import')?.addEventListener('click', () => ui.importDialog.showModal());
+  ui.historyList.querySelector('#empty-import')?.addEventListener('click', openImportDialog);
   ui.historyList.querySelector('#empty-folder')?.addEventListener('click', openNewFolderDialog);
   ui.historyList.querySelectorAll('details.library-menu').forEach((menu) => {
     menu.addEventListener('toggle', () => {
@@ -946,6 +958,11 @@ function libraryFailure(error) {
   if (error === 'empty-name') return 'El nombre no puede estar vacío';
   if (error === 'unsupported-version') return 'Esta biblioteca no se puede modificar';
   return 'No se pudo completar la acción';
+}
+
+function openImportDialog() {
+  ui.importFolder.value = currentFolderId || '';
+  ui.importDialog.showModal();
 }
 
 function openLibraryDialog(options) {

@@ -15,6 +15,12 @@ test('JSON bank walks all eight types, keyboard controls, and an import error', 
   await page.getByRole('button', { name: /Modo Estudio/ }).click();
 
   await expect(page.locator('img.question-image')).toHaveAttribute('alt', 'Marca violeta sobre un esquema');
+  await page.locator('.question-image-btn').click();
+  const imageModal = page.locator('#image-modal');
+  await expect(imageModal).toBeVisible();
+  await expect(imageModal.locator('#image-modal-img')).toBeVisible();
+  await page.locator('#close-image-modal').click();
+  await expect(imageModal).toBeHidden();
   await page.locator('.option-btn', { hasText: 'Madrid' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
 

@@ -150,12 +150,43 @@ function appendImage(container, question) {
   if (!question.image?.src) return;
   const doc = container.ownerDocument;
   const figure = el(doc, 'figure', 'question-figure');
+  const trigger = el(doc, 'button', 'question-image-btn');
+  const imageAlt = question.image.alt || question.prompt;
+  trigger.type = 'button';
+  trigger.setAttribute('aria-label', imageAlt ? `Ampliar imagen: ${imageAlt}` : 'Ampliar imagen');
+  trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.title = 'Haz clic para ampliar la imagen';
+
   const image = el(doc, 'img', 'question-image');
   image.src = question.image.src;
-  image.alt = question.image.alt || question.prompt;
+  image.alt = imageAlt;
   image.decoding = 'async';
   image.referrerPolicy = 'no-referrer';
-  figure.append(image);
+  trigger.append(image);
+
+  const zoomBadge = el(doc, 'span', 'question-image-zoom-badge');
+  zoomBadge.setAttribute('aria-hidden', 'true');
+  zoomBadge.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg><span>Ampliar</span>';
+  trigger.append(zoomBadge);
+
+  trigger.addEventListener('click', () => {
+    const modal = doc.getElementById('image-modal');
+    if (modal) {
+      const modalImg = modal.querySelector('#image-modal-img');
+      const modalCaption = modal.querySelector('#image-modal-caption');
+      if (modalImg) {
+        modalImg.src = question.image.src;
+        modalImg.alt = imageAlt;
+      }
+      if (modalCaption) {
+        modalCaption.textContent = question.image.alt || '';
+        modalCaption.hidden = !modalCaption.textContent;
+      }
+      modal.showModal?.();
+    }
+  });
+
+  figure.append(trigger);
   container.append(figure);
 }
 
@@ -237,11 +268,9 @@ function renderTrueFalse(container, question, answer, ctx) {
     if (ctx.reveal) {
       const expected = question.body.correct ? 'V' : 'F';
       if (value === expected) {
-        caption.classList.add('is-correct');
         itemWrap.classList.add('is-correct');
       }
       if (selected === value && value !== expected) {
-        caption.classList.add('is-incorrect');
         itemWrap.classList.add('is-incorrect');
       }
     }

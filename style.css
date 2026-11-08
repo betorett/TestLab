@@ -934,6 +934,59 @@ dialog::backdrop {
     font-size: 0.875rem;
 }
 
+/* Image Lightbox Modal */
+.image-modal {
+    width: min(56rem, calc(100vw - 32px));
+    max-width: min(56rem, calc(100vw - 32px));
+    max-height: min(92dvh, 52rem);
+    overflow: hidden;
+}
+.image-modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    max-height: min(92dvh, 52rem);
+    overflow: auto;
+}
+.image-modal-header {
+    width: 100%;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: flex-end;
+}
+.image-modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+.image-modal-img {
+    display: block;
+    max-width: 100%;
+    max-height: min(72dvh, 38rem);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    padding: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+}
+.image-modal-caption {
+    margin-top: 12px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 100%;
+    text-wrap: pretty;
+}
+.image-modal-caption:empty {
+    display: none;
+}
+
 /* Import Dialog */
 .import-file-section,
 .import-paste-section,
@@ -1374,6 +1427,49 @@ progress.exam-progress,
     align-items: center;
     max-width: 100%;
 }
+.question-image-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: zoom-in;
+    border-radius: var(--radius-md);
+    outline-offset: 3px;
+    transition: transform var(--transition);
+}
+.question-image-btn:hover .question-image {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+}
+.question-image-btn:focus-visible {
+    outline: 2px solid var(--focus);
+}
+.question-image-zoom-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: var(--radius-xs);
+    background: rgba(15, 23, 42, 0.82);
+    color: #ffffff;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    opacity: 0.85;
+    transition: opacity var(--transition);
+}
+.question-image-btn:hover .question-image-zoom-badge {
+    opacity: 1;
+}
 .question-image {
     display: block;
     max-width: 100%;
@@ -1386,6 +1482,7 @@ progress.exam-progress,
     background: #ffffff;
     padding: 8px;
     box-shadow: var(--shadow-sm);
+    transition: border-color var(--transition), box-shadow var(--transition);
 }
 @media (max-width: 480px) {
     .question-image {
@@ -1567,6 +1664,8 @@ progress.exam-progress,
     font-weight: 500;
     color: var(--text-primary);
     cursor: pointer;
+    background: transparent !important;
+    border: none !important;
 }
 
 /* Inputs, Blanks, Numeric, Matching, Ordering, Short Answer */

@@ -1631,6 +1631,7 @@ progress.exam-progress,
     }
 }
 .true-false-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1651,6 +1652,8 @@ progress.exam-progress,
     background: var(--accent-subtle);
 }
 .true-false-item input[type="radio"] {
+    position: relative;
+    z-index: 1;
     width: 18px;
     height: 18px;
     margin: 0;
@@ -1666,6 +1669,20 @@ progress.exam-progress,
     cursor: pointer;
     background: transparent !important;
     border: none !important;
+}
+.true-false-option::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+.true-false-item:has(input:disabled),
+.true-false-item:has(input:disabled) input[type="radio"],
+.true-false-item:has(input:disabled) .true-false-option,
+.true-false-item:has(input:disabled) .true-false-option::before {
+    cursor: default;
+    pointer-events: none;
 }
 
 /* Inputs, Blanks, Numeric, Matching, Ordering, Short Answer */

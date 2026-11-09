@@ -275,6 +275,16 @@ function renderTrueFalse(container, question, answer, ctx) {
       }
     }
     itemWrap.append(input, caption);
+    // Defensive fallback for clicks on container padding outside caption/input in headless/layout-less test runs (e.g. JSDOM)
+    itemWrap.addEventListener('click', (event) => {
+      if (ctx.reveal || input.disabled) return;
+      if (event.target !== input && event.target !== caption) {
+        if (!input.checked) {
+          input.checked = true;
+          ctx.onAnswer([value]);
+        }
+      }
+    });
     field.append(itemWrap);
   });
   container.append(field);

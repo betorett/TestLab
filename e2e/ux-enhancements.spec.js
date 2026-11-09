@@ -83,16 +83,41 @@ test('interactive question map and keyboard shortcuts allow navigation and insta
   await expect(page.getByText('2 / 3')).toBeVisible();
   await expect(pills.nth(1)).toHaveClass(/pill-current/);
 
-  // Press 'V' to select Verdadero
+  // Press 'V' to select Verdadero via keyboard shortcut
   await page.keyboard.press('v');
   const tfVerdadero = page.getByLabel('Verdadero');
   await expect(tfVerdadero).toBeChecked();
   await expect(pills.nth(1)).toHaveClass(/pill-correct/);
+  // Verify cursor becomes default when question is locked/disabled in study mode
+  const trueItem = page.locator('.true-false-item').first();
+  await expect(trueItem).toHaveCSS('cursor', 'default');
 
   // Click on pill 1 to jump back to question 1
   await pills.first().click();
   await expect(page.getByText('1 / 3')).toBeVisible();
   await expect(pills.first()).toHaveClass(/pill-current/);
+});
+
+test('true-false card expands hitbox to entire card padding in exam mode', async ({ page }) => {
+  await page.goto('/');
+  await openImportDialog(page);
+  await page.locator('#paste-input').fill(sampleBank('Banco Hitbox'));
+  await page.getByRole('button', { name: 'Añadir texto' }).click();
+
+  // Launch exam mode where answers can be changed freely
+  await page.getByRole('button', { name: 'Examinar Banco Hitbox' }).click();
+  await page.locator('.question-pill').nth(1).click();
+  await expect(page.getByText('2 / 3')).toBeVisible();
+
+  // Click on corner padding of 'Falso' (outside radio and caption)
+  const falseItem = page.locator('.true-false-item').last();
+  await falseItem.click({ position: { x: 4, y: 4 } });
+  await expect(page.getByLabel('Falso')).toBeChecked();
+
+  // Click on corner padding of 'Verdadero' (outside radio and caption)
+  const trueItem = page.locator('.true-false-item').first();
+  await trueItem.click({ position: { x: 4, y: 4 } });
+  await expect(page.getByLabel('Verdadero')).toBeChecked();
 });
 
 test('results screen displays instant results and breakdown items that open review', async ({ page }) => {

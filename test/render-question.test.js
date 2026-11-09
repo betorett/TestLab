@@ -205,6 +205,31 @@ test('revealed true-false applies correct/incorrect only to the outer item wrap 
   assert.equal(labelsWithState.length, 0, 'labels must not have is-correct or is-incorrect to prevent nested dark rectangles');
 });
 
+test('clicking the true-false outer container triggers answer even outside the label text', () => {
+  const root = mount();
+  let answered = null;
+  renderQuestion(root, base('TRUE_FALSE', { correct: true }), [], {
+    idPrefix: 'tf',
+    reveal: false,
+    onAnswer(ans) { answered = ans; }
+  });
+  const firstWrap = root.querySelector('.true-false-item');
+  firstWrap.dispatchEvent(new root.ownerDocument.defaultView.MouseEvent('click', { bubbles: true }));
+  assert.deepEqual(answered, ['V']);
+
+  // When revealed, clicks on outer container must not trigger onAnswer
+  answered = null;
+  const revealedRoot = mount();
+  renderQuestion(revealedRoot, base('TRUE_FALSE', { correct: true }), ['V'], {
+    idPrefix: 'tf-rev',
+    reveal: true,
+    onAnswer(ans) { answered = ans; }
+  });
+  const revWrap = revealedRoot.querySelector('.true-false-item');
+  revWrap.dispatchEvent(new revealedRoot.ownerDocument.defaultView.MouseEvent('click', { bubbles: true }));
+  assert.equal(answered, null, 'revealed question must not re-trigger onAnswer on container click');
+});
+
 test('revealed single choice shows tick on correct option and cross on chosen wrong option', () => {
   const root = mount();
   renderQuestion(root, base('SINGLE', {
